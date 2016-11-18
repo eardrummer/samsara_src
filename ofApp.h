@@ -18,9 +18,12 @@ public:
     ofxCv::ContourFinder contourFinder2;
     //ofColor targetColor3;
     //ofxCv::ContourFinder contourFinder3;
+    cv::Point2f center1;
+    cv::Point2f center2;
     
     ofxPanel gui;
     ofParameter<float> threshold1;
     ofParameter<float> threshold2;
+    //ofParameter<float> threshold3;
     ofParameter<bool> trackHs;
 };

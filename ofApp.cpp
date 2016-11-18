@@ -1,8 +1,10 @@
 
 #include "ofApp.h"
+#include <iostream>
 
 using namespace ofxCv;
 using namespace cv;
+using namespace std;
 
 void ofApp::setup() {
     cam.setup(640, 480);
@@ -22,7 +24,7 @@ void ofApp::setup() {
     
     gui.setup();
     gui.add(threshold1.set("Threshold", 90, 0, 255));
-    gui.add(threshold2.set("Threshold", 30, 0, 255));
+    gui.add(threshold2.set("Threshold", 50, 0, 255));
 }
 
 void ofApp::update() {
@@ -44,8 +46,27 @@ void ofApp::draw() {
     cam.draw(0, 0);
     
     ofSetLineWidth(2);
-    contourFinder1.draw();
-    contourFinder2.draw();
+    //contourFinder1.draw();
+    //contourFinder2.draw();
+    
+    ofNoFill();
+    
+    //Finding and drawing the center of the contour for color1
+    int n1 = contourFinder1.size();
+    double max1 = 0.0;
+    int indx1;
+    ofVec2f centroidmax1;
+    for(int i = 0; i < n1; i++) {
+        ofVec2f centroid1 = toOf(contourFinder1.getCenter(i));
+        double area1 = contourFinder1.getContourArea(i);
+        if(area1 > max1 ){
+            max1 = area1;
+            indx1 = i;
+            centroidmax1 = centroid1;
+        }
+    }
+    ofSetColor(cyanPrint);
+    ofDrawCircle(centroidmax1, 10);
     
     gui.draw();
     
