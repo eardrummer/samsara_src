@@ -9,7 +9,7 @@ using namespace std;
 void ofApp::setup() {
     cam.setup(640, 480);
     
-    //targetColor2 is red, targetColor2 is blue - Similarly contourFinder1(or 2), threshold1(or 2)
+    //targetColor1 is red, targetColor2 is blue - Similarly contourFinder1(or 2), threshold1(or 2)
     contourFinder1.setMinAreaRadius(10);
     contourFinder1.setMaxAreaRadius(150);
     
@@ -51,7 +51,7 @@ void ofApp::draw() {
     
     ofNoFill();
     
-    //Finding and drawing the center of the contour for color1
+    //Finding and drawing the center of the contour for targetcolor1
     int n1 = contourFinder1.size();
     double max1 = 0.0;
     int indx1;
@@ -68,6 +68,23 @@ void ofApp::draw() {
     ofSetColor(cyanPrint);
     ofDrawCircle(centroidmax1, 10);
     
+    //Finding and drawing the center of the contour for targetcolor2
+    int n2 = contourFinder2.size();
+    double max2 = 0.0;
+    int indx2;
+    ofVec2f centroidmax2;
+    for(int i = 0; i < n2; i++) {
+        ofVec2f centroid2 = toOf(contourFinder2.getCenter(i));
+        double area2 = contourFinder2.getContourArea(i);
+        if(area2 > max2 ){
+            max2 = area2;
+            indx2 = i;
+            centroidmax2 = centroid2;
+        }
+    }
+    ofSetColor(magentaPrint);
+    ofDrawCircle(centroidmax2, 10);
+
     gui.draw();
     
 }
