@@ -3,6 +3,18 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 #include "ofxGui.h"
+#include "ofxOsc.h"
+
+#define HOST "10.80.139.239"
+#define PORT 8000
+
+struct Ball {
+    int x;
+    int y;
+    int vx;
+    int vy;
+    int radius;
+};
 
 class ofApp : public ofBaseApp {
 public:
@@ -10,6 +22,9 @@ public:
     void update();
     void draw();
     void mousePressed(int x, int y, int button);
+    
+    //Balls code
+    Ball balls[10];
     
     ofVideoGrabber cam;
     ofxCv::ContourFinder contourFinder1;
@@ -20,10 +35,17 @@ public:
     //ofxCv::ContourFinder contourFinder3;
     cv::Point2f center1;
     cv::Point2f center2;
+    cv::Rect boundingRect1;
     
     ofxPanel gui;
     ofParameter<float> threshold1;
     ofParameter<float> threshold2;
     //ofParameter<float> threshold3;
     ofParameter<bool> trackHs;
+    
+    //OSC code
+    ofTrueTypeFont font;
+    ofxOscSender sender;
+    ofBuffer imgAsBuffer;
+    ofImage img;
 };
