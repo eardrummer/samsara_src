@@ -26,7 +26,7 @@ void ofApp::setup() {
     
     contourFinder1.setTargetColor(targetColor1, TRACK_COLOR_RGB);
     contourFinder2.setTargetColor(targetColor2, TRACK_COLOR_HS);
-    contourFinder2.setTargetColor(targetColor3, TRACK_COLOR_RGB);
+    contourFinder2.setTargetColor(targetColor3, TRACK_COLOR_HSV);
     
     //loading background
     gifloader.load("images/flashing.gif");
@@ -50,10 +50,11 @@ void ofApp::setup() {
     gui.setup();
     gui.add(threshold1.set("Threshold", 90, 0, 255));
     gui.add(threshold2.set("Threshold", 50, 0, 255));
-    gui.add(threshold3.set("Threshold", 90, 0, 255));
+    gui.add(threshold3.set("Threshold", 100, 0, 255));
 }
 
 void ofApp::update() {
+    
     cam.update();
     if(cam.isFrameNew()) {
         contourFinder1.setTargetColor(targetColor1,TRACK_COLOR_RGB);
@@ -64,7 +65,7 @@ void ofApp::update() {
         contourFinder2.setThreshold(threshold2);
         contourFinder2.findContours(cam);
         
-        contourFinder3.setTargetColor(targetColor3,TRACK_COLOR_RGB);
+        contourFinder3.setTargetColor(targetColor3,TRACK_COLOR_HSV);
         contourFinder3.setThreshold(threshold3);
         contourFinder3.findContours(cam);
     }
@@ -117,6 +118,11 @@ void ofApp::draw() {
     
     ofNoFill();
     
+    //Code to flip everything laterally, write all the drawing code between this and ofPopMatrix()
+    ofPushMatrix(); // save the old coordinate system
+    ofTranslate( ofGetWidth(), 0.0f); // move the origin to the bottom-left hand corner of the window
+    ofScale(-1.0f, 1.0f); // flip the x axis horizontally
+    
     //Finding and drawing the center of the contour for targetcolor1
     ofPolyline minAreaRect1;
     int n1 = contourFinder1.size();
@@ -159,7 +165,6 @@ void ofApp::draw() {
     minAreaRect2.draw();
     ofDrawCircle(centroidmax2, 10);
     
-    
     //Finding and drawing the center of the contour for targetcolor1
     ofPolyline minAreaRect3;
     int n3 = contourFinder3.size();
@@ -182,12 +187,13 @@ void ofApp::draw() {
     ofDrawCircle(centroidmax3, 10);
     
     //Balls code
-    for (int i=0; i<10; i++) {
-        ofSetColor(255, 255, 0);
-        ofDrawCircle(balls[i].x, balls[i].y, balls[i].radius);
-    }
-    
+    //for (int i=0; i<10; i++) {
+    //ofSetColor(255, 255, 0);
+    //ofDrawCircle(balls[i].x, balls[i].y, balls[i].radius);
+    //}
+    ofPopMatrix(); // restore the previous coordinate system
     gui.draw();
+    
     
 }
 
