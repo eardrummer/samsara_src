@@ -6,9 +6,12 @@
 #include "ofxOsc.h"
 #include "ofxGif.h"
 
+#include "ofAtom.h"
+
 #define HOST "10.80.139.239"
 #define PORT 8000
 
+/*
 struct Ball {
     int x;
     int y;
@@ -16,6 +19,8 @@ struct Ball {
     int vy;
     int radius;
 };
+*/
+
 
 class ofApp : public ofBaseApp {
 public:
@@ -24,9 +29,17 @@ public:
     void draw();
     void mousePressed(int x, int y, int button);
     
-    //Balls code
-    Ball balls[10];
+
     
+ 
+    //Atom Code
+    // Initializing the Different atoms dynamically
+    // TODO: Replace with ofAtom **CAtom
+    ofAtom **CAtom;
+    ofAtom **PAtom;
+    ofAtom **DAtom;        
+
+
     ofxGIF::fiGifLoader gifloader;
     ofVideoGrabber cam;
     ofxCv::ContourFinder contourFinder1;

@@ -7,6 +7,13 @@ using namespace cv;
 using namespace std;
 
 int indx = 0;
+
+int n_Creator;
+int n_Preserver;
+int n_Destroyer;
+
+
+
 void ofApp::setup() {
     cam.setup(640, 480);
     
@@ -31,10 +38,36 @@ void ofApp::setup() {
     //loading background
     gifloader.load("images/flashing.gif");
     
-    //Balls code
-    ofBackground(0, 0, 0);
-    ofSetFrameRate(30);
+    //Atoms code
+    //Initializing one Atom of each type
+    CAtom = new ofAtom*[2];
+    PAtom = new ofAtom*[1];
+    DAtom = new ofAtom*[1];
     
+    n_Creator = 2;
+    n_Preserver = 1;
+    n_Destroyer = 1;
+
+
+
+//    IPAtom = new ofAtom*[1];
+//    IPAtom[0] = new ofAtom();
+
+    ofSetFrameRate(60);
+
+
+    // Atom Creation TODO: Replace by timed creation in update
+    CAtom[0] = new ofAtom(0,0, 50, 50, 40);
+    PAtom[0] = new ofAtom(1,0, 200, 130, 40);
+    DAtom[0] = new ofAtom(2,0, 300, 60, 40);
+    
+    CAtom[1] = new ofAtom(0,0, 50, 150, 40);
+    //PAtom[1] = new ofAtom(1,0, 200, 30, 40);
+    //DAtom[1] = new ofAtom(2,0, 300, 160, 40);
+
+
+
+ /*
     for (int i=0; i<10; i++) {
         balls[i].x = ofRandomWidth();
         balls[i].y = ofRandomHeight();
@@ -42,6 +75,7 @@ void ofApp::setup() {
         balls[i].vy = ofRandom(-10,10);
         balls[i].radius = ofRandom(10,40);
     }
+ */
     
     //OSC Code
     // open an outgoing connection to HOST:PORT
@@ -76,9 +110,68 @@ void ofApp::update() {
         indx++;
         if (indx > gifloader.pages.size()-1) indx = 0;
     }
+  
+    //Atoms Code
+    for (int i = 0; i < n_Creator; i++)
+    CAtom[i]->update();
+
+    for (int i = 0; i < n_Preserver; i++)
+    PAtom[i]->update();
+
+    for (int i = 0; i < n_Destroyer; i++)
+    DAtom[i]->update();
     
+    //Checking for Atoms closest to each.
+	//Creator
+    for(int j = 0; j < n_Creator; j++) {
+    	for(int i = 0; i < n_Preserver; i++){
+        	CAtom[j]->collide(PAtom[i]);
+        	//PAtom[i]->collide(CAtom[j]);
+    	}
+    	for(int i = 0; i < n_Destroyer; i++){
+        	CAtom[j]->collide(DAtom[i]);
+        	//DAtom[i]->collide(CAtom[j]);
+    	}
+    	for(int i = 0; i < n_Creator; i++){
+		//TODO: Check for distance from other creator atoms
+              if(i!=j){
+		CAtom[j]->collide(CAtom[i]);
+		//CAtom[i]->collide(CAtom[j]);
+		}
+    	}
+    }
+ 
+	//Preserver
+    for(int j = 0; j < n_Preserver; j++){	
+    	for(int i = 0; i < n_Destroyer; i++){
+        	PAtom[j]->collide(DAtom[i]);
+        	//DAtom[i]->collide(PAtom[j]);
+    	}
+    	for(int i = 0; i < n_Preserver; i++){
+        	//TODO: Make multiple Preserver atoms collide
+              if(i!=j){
+                PAtom[j]->collide(PAtom[i]);
+                //PAtom[i]->collide(PAtom[j]);
+                }
+    	}
+
+    }
+	//Destroyer
+    for(int j = 0; j < n_Destroyer; j++)
+    for(int i = 0; i < n_Destroyer; i++){
+        //TODO: Check for distance from other creator atoms
+
+              if(i!=j){
+                DAtom[j]->collide(DAtom[i]);
+                //DAtom[i]->collide(DAtom[j]);
+                }
+
+    }
+
+
+  
     //Balls code
-    for (int i=0; i<10; i++) {
+    /*for (int i=0; i<10; i++) {
         
         balls[i].x = balls[i].x + balls[i].vx;
         balls[i].y = balls[i].y + balls[i].vy;
@@ -91,11 +184,13 @@ void ofApp::update() {
             balls[i].vy = -balls[i].vy;
         }
     }
+    */
     
     //OSC code
     ofxOscMessage m;
     m.setAddress("/sendxOfBall_1");
-    m.addIntArg(balls[0].y);
+    m.addIntArg(CAtom[0]->m_posY);
+    //m.addIntArg(balls[0].y);
     //m.addStringArg("down");
     sender.sendMessage(m, false);
     
@@ -145,6 +240,7 @@ void ofApp::draw() {
     ofDrawCircle(centroidmax1, 10);
     
     
+    
     //Finding and drawing the center of the contour for targetcolor2
     ofPolyline minAreaRect2;
     int n2 = contourFinder2.size();
@@ -165,7 +261,7 @@ void ofApp::draw() {
     minAreaRect2.draw();
     ofDrawCircle(centroidmax2, 10);
     
-    //Finding and drawing the center of the contour for targetcolor1
+    //Finding and drawing the center of the contour for targetcolor3
     ofPolyline minAreaRect3;
     int n3 = contourFinder3.size();
     double max3 = 0.0;
@@ -191,6 +287,19 @@ void ofApp::draw() {
     //ofSetColor(255, 255, 0);
     //ofDrawCircle(balls[i].x, balls[i].y, balls[i].radius);
     //}
+
+    //Atoms Code
+    //Loop through all existing atoms.
+    for(int i = 0; i < n_Creator; i++){
+	CAtom[i]->draw();
+    }
+    for(int i = 0; i < n_Preserver; i++){
+	PAtom[i]->draw();
+    }
+    for(int i = 0; i < n_Destroyer; i++){
+	DAtom[i]->draw();
+    }
+
     ofPopMatrix(); // restore the previous coordinate system
     gui.draw();
     
