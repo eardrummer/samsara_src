@@ -6,10 +6,10 @@ using namespace ofxCv;
 using namespace cv;
 using namespace std;
 
-#define MAXCreator 2
-#define MAXPreserver 2
-#define MAXDestroyer 2
-#define MAXAtoms 6
+#define MAXCreator 5
+#define MAXPreserver 5
+#define MAXDestroyer 5
+#define MAXAtoms 15
 #define RADIUS 30
 
 int indx = 0;
@@ -27,7 +27,7 @@ int isCollidedPreserver[MAXCreator][MAXPreserver];
 int isCollidedDestroyer[MAXCreator][MAXDestroyer];
 
 void ofApp::setup() {
-    cam.setup(640, 480);
+    cam.setup(1280,720);
     
     //targetColor1 is red, targetColor2 is blue, targetColor3 is yellow - Similarly contourFinder1(or 2 or 3), threshold1(or 2 or 3)
     contourFinder1.setMinAreaRadius(10);
@@ -41,7 +41,7 @@ void ofApp::setup() {
     
     targetColor1.set(255,0,0);
     targetColor2.set(0,0,255);
-    targetColor3.set(255,255,0);
+    targetColor3.set(0,255,0);
     
     contourFinder1.setTargetColor(targetColor1, TRACK_COLOR_RGB);
     contourFinder2.setTargetColor(targetColor2, TRACK_COLOR_HS);
@@ -110,9 +110,9 @@ void ofApp::setup() {
     sender.setup(HOST, PORT);
     
     gui.setup();
-    gui.add(threshold1.set("Threshold", 90, 0, 255));
-    gui.add(threshold2.set("Threshold", 50, 0, 255));
-    gui.add(threshold3.set("Threshold", 100, 0, 255));
+    gui.add(threshold1.set("Threshold1", 90, 0, 255));
+    gui.add(threshold2.set("Threshold2", 50, 0, 255));
+    gui.add(threshold3.set("Threshold3", 100, 0, 255));
 }
 
 void ofApp::update() {
@@ -230,7 +230,7 @@ void ofApp::update() {
         for(int i = 0; i < n_Creator; i++){
             //TODO: Check for distance from other creator atoms
             if(i!=j){
-                //	CAtom[j]->collide(CAtom[i]);
+              	CAtom[j]->collide(CAtom[i]);
             }
         }
     }
@@ -306,9 +306,9 @@ void ofApp::draw() {
     //cam.draw(0, 0);
     //cam.draw(cam.getWidth(),0,-cam.getWidth(),cam.getHeight());  //For laterally inverting cam video
     
-    //For drawing background: 71 is the starting x position as the image size is 498*480
+    //For drawing background: the image size is 498*480
     //Comment the next line for viewing the camera input
-    gifloader.pages[indx].draw(71, 0);
+    gifloader.pages[indx].draw(391, 120);
     
     ofSetLineWidth(2);
     //contourFinder1.draw();
@@ -353,4 +353,27 @@ void ofApp::draw() {
 
 void ofApp::mousePressed(int x, int y, int button) {
     //targetColor = cam.getPixels().getColor(x, y);
+}
+
+
+void ofApp::keyPressed(int key){
+
+    switch(key){
+
+	case 'q':
+        case 'Q': 
+		for(int i = 0; i < n_Creator; i++){
+			delete [] CAtom[i];
+		} 
+                for(int i = 0; i < n_Preserver; i++){
+                        delete [] PAtom[i];
+                }
+                for(int i = 0; i < n_Destroyer; i++){
+                        delete [] DAtom[i];
+                }
+		ofExit();
+
+    }
+
+
 }

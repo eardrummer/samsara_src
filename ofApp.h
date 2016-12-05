@@ -8,7 +8,7 @@
 
 #include "ofAtom.h"
 
-#define HOST "192.168.1.38"
+#define HOST "10.80.138.34"
 #define PORT 9455
 
 /*
@@ -28,6 +28,7 @@ public:
     void update();
     void draw();
     void mousePressed(int x, int y, int button);
+    void keyPressed(int key);
     
     double max1;
     int indx1;
