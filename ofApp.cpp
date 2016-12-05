@@ -6,13 +6,19 @@ using namespace ofxCv;
 using namespace cv;
 using namespace std;
 
-int indx = 0;
+#define MAXCreator 2
+#define MAXPreserver 1
+#define MAXDestroyer 1
+#define MAXAtoms 4
 
+int indx = 0;
+int flag = 0;
 int n_Creator;
 int n_Preserver;
 int n_Destroyer;
+int n_Atoms;
 
-
+int isCollided[MAXCreator];
 
 void ofApp::setup() {
     cam.setup(640, 480);
@@ -40,14 +46,14 @@ void ofApp::setup() {
     
     //Atoms code
     //Initializing one Atom of each type
-    CAtom = new ofAtom*[2];
-    PAtom = new ofAtom*[1];
-    DAtom = new ofAtom*[1];
+    CAtom = new ofAtom*[MAXCreator];
+    PAtom = new ofAtom*[MAXPreserver];
+    DAtom = new ofAtom*[MAXDestroyer];
     
-    n_Creator = 2;
+    n_Creator = 3;
     n_Preserver = 1;
     n_Destroyer = 1;
-
+    n_Atoms = n_Creator + n_Preserver + n_Destroyer;
 
 
 //    IPAtom = new ofAtom*[1];
@@ -61,9 +67,9 @@ void ofApp::setup() {
     PAtom[0] = new ofAtom(1,0, 200, 130, 40);
     DAtom[0] = new ofAtom(2,0, 300, 60, 40);
     
-    CAtom[1] = new ofAtom(0,0, 50, 150, 40);
-    //PAtom[1] = new ofAtom(1,0, 200, 30, 40);
-    //DAtom[1] = new ofAtom(2,0, 300, 160, 40);
+    CAtom[1] = new ofAtom(0,1, 50, 150, 40);
+    //PAtom[1] = new ofAtom(1,1, 200, 30, 40);
+    //DAtom[1] = new ofAtom(2,1, 300, 160, 40);
 
 
 
@@ -88,7 +94,15 @@ void ofApp::setup() {
 }
 
 void ofApp::update() {
-    
+    if(flag == 0)
+     CAtom[2] = new ofAtom(0,2,150,50,40);
+    flag = 1;
+
+    for(int i = 0; i < n_Creator; i++){
+	isCollided[i] = 0;
+    }
+
+
     cam.update();
     if(cam.isFrameNew()) {
         contourFinder1.setTargetColor(targetColor1,TRACK_COLOR_RGB);
@@ -125,18 +139,15 @@ void ofApp::update() {
 	//Creator
     for(int j = 0; j < n_Creator; j++) {
     	for(int i = 0; i < n_Preserver; i++){
-        	CAtom[j]->collide(PAtom[i]);
-        	//PAtom[i]->collide(CAtom[j]);
+        	isCollided[j] = CAtom[j]->collide(PAtom[i]);
     	}
     	for(int i = 0; i < n_Destroyer; i++){
-        	CAtom[j]->collide(DAtom[i]);
-        	//DAtom[i]->collide(CAtom[j]);
+        	isCollided[j] = CAtom[j]->collide(DAtom[i]);
     	}
     	for(int i = 0; i < n_Creator; i++){
 		//TODO: Check for distance from other creator atoms
               if(i!=j){
 		CAtom[j]->collide(CAtom[i]);
-		//CAtom[i]->collide(CAtom[j]);
 		}
     	}
     }
@@ -145,13 +156,11 @@ void ofApp::update() {
     for(int j = 0; j < n_Preserver; j++){	
     	for(int i = 0; i < n_Destroyer; i++){
         	PAtom[j]->collide(DAtom[i]);
-        	//DAtom[i]->collide(PAtom[j]);
     	}
     	for(int i = 0; i < n_Preserver; i++){
         	//TODO: Make multiple Preserver atoms collide
               if(i!=j){
                 PAtom[j]->collide(PAtom[i]);
-                //PAtom[i]->collide(PAtom[j]);
                 }
     	}
 
@@ -163,7 +172,6 @@ void ofApp::update() {
 
               if(i!=j){
                 DAtom[j]->collide(DAtom[i]);
-                //DAtom[i]->collide(DAtom[j]);
                 }
 
     }
@@ -188,8 +196,21 @@ void ofApp::update() {
     
     //OSC code
     ofxOscMessage m;
-    m.setAddress("/sendxOfBall_1");
-    m.addIntArg(CAtom[0]->m_posY);
+    m.setAddress("/collisionType");
+
+    m.addIntArg(isCollided[0]);
+    m.addIntArg(isCollided[1]);
+
+    cout<<" -----> "<<isCollided[0]<<" "<<isCollided[1];
+
+/*
+    for(int i = 0; i < n_Creator; i++) {
+    //sender.appendMessage(m,isCollided[i]);
+    m.addIntArg(isCollided[i]);
+    cout<<"  --------> "<<isCollided[i]<<" ";
+    }
+    cout<<"END OF MESSAGE"<<endl;
+*/
     //m.addIntArg(balls[0].y);
     //m.addStringArg("down");
     sender.sendMessage(m, false);

@@ -8,8 +8,8 @@
 
 #include "ofAtom.h"
 
-#define HOST "10.80.139.239"
-#define PORT 8000
+#define HOST "192.168.1.40"
+#define PORT 9455
 
 /*
 struct Ball {
