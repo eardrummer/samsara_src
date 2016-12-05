@@ -28,6 +28,9 @@ public:
     
     //Colliding function
     int collide(ofAtom* nearAtom);		//nearAtom is the Atom nearest to this.ofAtom
+    void assign(ofAtom* Atom, int velX, int velY); 
+    float atomFxDist(ofAtom** PAtom, int n_Preserver);		//Calculates distance from closest Fx Atom (Preserver Atom)
+    int atomFxId(ofAtom** PAtom, int n_Preserver);
 };
 
 #endif

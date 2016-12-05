@@ -11,15 +11,6 @@
 #define HOST "10.80.138.34"
 #define PORT 9455
 
-/*
- struct Ball {
- int x;
- int y;
- int vx;
- int vy;
- int radius;
- };
- */
 
 
 class ofApp : public ofBaseApp {
@@ -33,20 +24,20 @@ public:
     double max1;
     int indx1;
     ofVec2f centroidmax1;
-    ofPolyline minAreaRect1;
     int n1;
+    ofVec2f velocity1;
     
     double max2;
     int indx2;
     ofVec2f centroidmax2;
-    ofPolyline minAreaRect2;
     int n2;
+    ofVec2f velocity2;
     
     double max3;
     int indx3;
     ofVec2f centroidmax3;
-    ofPolyline minAreaRect3;
     int n3;
+    ofVec2f velocity3;
     
     //Atom Code
     // Initializing the Different atoms dynamically

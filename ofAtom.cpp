@@ -29,8 +29,7 @@ ofAtom::ofAtom(int type, int id, int posX , int posY, int radius){
      else if(type == 2){
      n_Destroyer++
      }
-     */
-    
+     */  
     
 }
 
@@ -142,8 +141,8 @@ int ofAtom::collide(ofAtom* nearAtom){
     return 0;   //No Collision occured
 }
 
-
-void assign(ofAtom* Atom, int velX, int velY){
+//-----------------------------------------------------------------------------------------
+void ofAtom::assign(ofAtom* Atom, int velX, int velY){
 
 	Atom->m_velocityX = velX;
         Atom->m_velocityY = velY;
@@ -153,7 +152,40 @@ void assign(ofAtom* Atom, int velX, int velY){
 }
 
 
+//----------------------------------------------------------------------------------------
+float ofAtom::atomFxDist(ofAtom** PAtom, int n_Preserver){
 
+float Max = 0, Distance;
+
+	for(int i = 0; i < n_Preserver; i++){
+		
+		Distance = ofDist(PAtom[i]->m_posX, PAtom[i]->m_posY, m_posX, m_posY);
+		if(Max < Distance)
+			Max = Distance;
+
+	}
+return Max;
+}
+
+//----------------------------------------------------------------------------------------------
+int ofAtom::atomFxId(ofAtom** PAtom, int n_Preserver){
+
+float Max = 0, Distance;
+int id = -1;
+
+        for(int i = 0; i < n_Preserver; i++){
+
+                Distance = ofDist(PAtom[i]->m_posX, PAtom[i]->m_posY, m_posX, m_posY);
+                if(Max < Distance){
+                        Max = Distance;
+			id = PAtom[i]->m_id;
+		}
+        }
+return id;
+}
+
+
+//----------------------------------------------------------------------------------------------
 //void ofAtom::~ofAtom(){
 
 

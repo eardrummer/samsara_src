@@ -8,8 +8,8 @@ using namespace std;
 
 #define MAXCreator 5
 #define MAXPreserver 5
-#define MAXDestroyer 5
-#define MAXAtoms 15
+#define MAXDestroyer 2
+#define MAXAtoms 12
 #define RADIUS 30
 
 int indx = 0;
@@ -136,13 +136,12 @@ void ofApp::update() {
     n1 = contourFinder1.size();
     max1 = 0.0;
     for(int i = 0; i < n1; i++) {
-        ofVec2f centroid1 = toOf(contourFinder1.getCenter(i));
         double area1 = contourFinder1.getContourArea(i);
         if(area1 > max1 ){
             max1 = area1;
             indx1 = i;
-            centroidmax1 = centroid1;
-            minAreaRect1 = toOf(contourFinder1.getMinAreaRect(i));
+            centroidmax1 = toOf(contourFinder1.getCenter(i));
+            velocity1 = toOf(contourFinder1.getVelocity(i));
         }
     }
     
@@ -150,13 +149,12 @@ void ofApp::update() {
     n2 = contourFinder2.size();
     max2 = 0.0;
     for(int i = 0; i < n2; i++) {
-        ofVec2f centroid2 = toOf(contourFinder2.getCenter(i));
         double area2 = contourFinder2.getContourArea(i);
         if(area2 > max2 ){
             max2 = area2;
             indx2 = i;
-            centroidmax2 = centroid2;
-            minAreaRect2 = toOf(contourFinder2.getMinAreaRect(i));
+            centroidmax2 = toOf(contourFinder2.getCenter(i));
+            velocity2 = toOf(contourFinder2.getVelocity(i));
         }
     }
     
@@ -164,13 +162,12 @@ void ofApp::update() {
     n3 = contourFinder3.size();
     max3 = 0.0;
     for(int i = 0; i < n3; i++) {
-        ofVec2f centroid3 = toOf(contourFinder3.getCenter(i));
         double area3 = contourFinder3.getContourArea(i);
         if(area3 > max3 ){
             max3 = area3;
             indx3 = i;
-            centroidmax3 = centroid3;
-            minAreaRect3 = toOf(contourFinder3.getMinAreaRect(i));
+            centroidmax3 = toOf(contourFinder3.getCenter(i));
+            velocity3 = toOf(contourFinder3.getVelocity(i));
         }
     }
     
