@@ -117,35 +117,6 @@ void ofApp::setup() {
 
 void ofApp::update() {
     
-    
-    if(n_Creator < MAXCreator && (ofGetFrameNum()%120==0))
-    {
-        CAtom[n_Creator] = new ofAtom(0,n_Creator,150,50,RADIUS);
-        n_Creator++;
-    }
-    if(n_Preserver < MAXPreserver && (ofGetFrameNum() > (120*MAXCreator) && ofGetFrameNum()%120 == 0))
-    {
-        PAtom[n_Preserver] = new ofAtom(1,n_Preserver,50,200,RADIUS);
-        n_Preserver++;
-    }
-    if(n_Destroyer < MAXDestroyer && (ofGetFrameNum() > (120*(MAXCreator + MAXPreserver)) && ofGetFrameNum()%120 == 0))
-    {
-        DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer,200,200,RADIUS);
-        n_Destroyer++;
-    }
-
-    
-    for(int j = 0; j < n_Creator; j++)
-        for(int i = 0; i < n_Preserver; i++){
-            isCollidedPreserver[j][i] = 0;
-        }
-    
-    for(int j = 0; j < n_Creator; j++)
-        for(int i = 0; i < n_Destroyer; i++){
-            isCollidedDestroyer[j][i] = 0;
-        }
-    
-    
     cam.update();
     if(cam.isFrameNew()) {
         contourFinder1.setTargetColor(targetColor1,TRACK_COLOR_RGB);
@@ -160,6 +131,75 @@ void ofApp::update() {
         contourFinder3.setThreshold(threshold3);
         contourFinder3.findContours(cam);
     }
+    
+    //Finding and drawing the center of the contour for targetcolor1
+    n1 = contourFinder1.size();
+    max1 = 0.0;
+    for(int i = 0; i < n1; i++) {
+        ofVec2f centroid1 = toOf(contourFinder1.getCenter(i));
+        double area1 = contourFinder1.getContourArea(i);
+        if(area1 > max1 ){
+            max1 = area1;
+            indx1 = i;
+            centroidmax1 = centroid1;
+            minAreaRect1 = toOf(contourFinder1.getMinAreaRect(i));
+        }
+    }
+    
+    //Finding and drawing the center of the contour for targetcolor2
+    n2 = contourFinder2.size();
+    max2 = 0.0;
+    for(int i = 0; i < n2; i++) {
+        ofVec2f centroid2 = toOf(contourFinder2.getCenter(i));
+        double area2 = contourFinder2.getContourArea(i);
+        if(area2 > max2 ){
+            max2 = area2;
+            indx2 = i;
+            centroidmax2 = centroid2;
+            minAreaRect2 = toOf(contourFinder2.getMinAreaRect(i));
+        }
+    }
+    
+    //Finding and drawing the center of the contour for targetcolor3
+    n3 = contourFinder3.size();
+    max3 = 0.0;
+    for(int i = 0; i < n3; i++) {
+        ofVec2f centroid3 = toOf(contourFinder3.getCenter(i));
+        double area3 = contourFinder3.getContourArea(i);
+        if(area3 > max3 ){
+            max3 = area3;
+            indx3 = i;
+            centroidmax3 = centroid3;
+            minAreaRect3 = toOf(contourFinder3.getMinAreaRect(i));
+        }
+    }
+    
+    if(n_Creator < MAXCreator && (ofGetFrameNum()%120==0))
+    {
+        CAtom[n_Creator] = new ofAtom(0,n_Creator,centroidmax1.x,centroidmax1.y,RADIUS);
+        n_Creator++;
+    }
+    if(n_Preserver < MAXPreserver && (ofGetFrameNum() > (120*MAXCreator) && ofGetFrameNum()%120 == 0))
+    {
+        PAtom[n_Preserver] = new ofAtom(1,n_Preserver,centroidmax2.x,centroidmax2.y,RADIUS);
+        n_Preserver++;
+    }
+    if(n_Destroyer < MAXDestroyer && (ofGetFrameNum() > (120*(MAXCreator + MAXPreserver)) && ofGetFrameNum()%120 == 0))
+    {
+        DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer,centroidmax3.x,centroidmax3.y,RADIUS);
+        n_Destroyer++;
+    }
+    
+    
+    for(int j = 0; j < n_Creator; j++)
+        for(int i = 0; i < n_Preserver; i++){
+            isCollidedPreserver[j][i] = 0;
+        }
+    
+    for(int j = 0; j < n_Creator; j++)
+        for(int i = 0; i < n_Destroyer; i++){
+            isCollidedDestroyer[j][i] = 0;
+        }
     
     //For drawing background
     if (ofGetFrameNum() % 2)
@@ -219,24 +259,6 @@ void ofApp::update() {
             
         }
     
-    
-    
-    //Balls code
-    /*for (int i=0; i<10; i++) {
-     
-     balls[i].x = balls[i].x + balls[i].vx;
-     balls[i].y = balls[i].y + balls[i].vy;
-     
-     if (balls[i].x<0 || balls[i].x > ofGetWidth()) {
-     balls[i].vx = -balls[i].vx;
-     }
-     
-     if (balls[i].y<0 || balls[i].y > ofGetHeight()) {
-     balls[i].vy = -balls[i].vy;
-     }
-     }
-     */
-    
     //OSC code
     ofxOscMessage m1,m2,m3,m4;
     m1.setAddress("/collisionType");
@@ -262,8 +284,6 @@ void ofApp::update() {
         }
     }
     
-    
-    
     for(int j = 0; j < n_Creator; j++){
         for(int i = 0; i < n_Preserver; i++){
             FxDistance[j][i] = ofDist(CAtom[j]->m_posX, CAtom[j]->m_posY, PAtom[i]->m_posX, PAtom[i]->m_posY);
@@ -276,23 +296,11 @@ void ofApp::update() {
     m4.addIntArg(FxDistance[1][0]);
     sender.sendMessage(m4,false);
     
-    
-    /*
-     for(int i = 0; i < n_Creator; i++) {
-     //sender.appendMessage(m,isCollided[i]);
-     m.addIntArg(isCollided[i]);
-     cout<<"  --------> "<<isCollided[i]<<" ";
-     }
-     cout<<"END OF MESSAGE"<<endl;
-     */
-    //m.addIntArg(balls[0].y);
-    //m.addStringArg("down");
-    //sender.sendMessage(m, false);
-    
 }
 
 void ofApp::draw() {
     ofSetColor(255);
+    ofBackground(0);
     
     //Uncomment the next line for viewing the camera input
     //cam.draw(0, 0);
@@ -313,75 +321,18 @@ void ofApp::draw() {
     ofTranslate( ofGetWidth(), 0.0f); // move the origin to the bottom-left hand corner of the window
     ofScale(-1.0f, 1.0f); // flip the x axis horizontally
     
-    //Finding and drawing the center of the contour for targetcolor1
-    ofPolyline minAreaRect1;
-    int n1 = contourFinder1.size();
-    double max1 = 0.0;
-    int indx1;
-    ofVec2f centroidmax1;
-    for(int i = 0; i < n1; i++) {
-        
-        ofVec2f centroid1 = toOf(contourFinder1.getCenter(i));
-        double area1 = contourFinder1.getContourArea(i);
-        if(area1 > max1 ){
-            max1 = area1;
-            indx1 = i;
-            centroidmax1 = centroid1;
-            minAreaRect1 = toOf(contourFinder1.getMinAreaRect(i));
-        }
-    }
+
     ofSetColor(magentaPrint);
-    minAreaRect1.draw();
-    ofDrawCircle(centroidmax1, 10);
+    //minAreaRect1.draw();
+    ofDrawCircle(centroidmax1, 15);
     
-    
-    
-    //Finding and drawing the center of the contour for targetcolor2
-    ofPolyline minAreaRect2;
-    int n2 = contourFinder2.size();
-    double max2 = 0.0;
-    int indx2;
-    ofVec2f centroidmax2;
-    for(int i = 0; i < n2; i++) {
-        ofVec2f centroid2 = toOf(contourFinder2.getCenter(i));
-        double area2 = contourFinder2.getContourArea(i);
-        if(area2 > max2 ){
-            max2 = area2;
-            indx2 = i;
-            centroidmax2 = centroid2;
-            minAreaRect2 = toOf(contourFinder2.getMinAreaRect(i));
-        }
-    }
     ofSetColor(cyanPrint);
-    minAreaRect2.draw();
-    ofDrawCircle(centroidmax2, 10);
+    //minAreaRect2.draw();
+    ofDrawCircle(centroidmax2, 15);
     
-    //Finding and drawing the center of the contour for targetcolor3
-    ofPolyline minAreaRect3;
-    int n3 = contourFinder3.size();
-    double max3 = 0.0;
-    int indx3;
-    ofVec2f centroidmax3;
-    for(int i = 0; i < n3; i++) {
-        
-        ofVec2f centroid3 = toOf(contourFinder3.getCenter(i));
-        double area3 = contourFinder3.getContourArea(i);
-        if(area3 > max3 ){
-            max3 = area3;
-            indx3 = i;
-            centroidmax3 = centroid3;
-            minAreaRect3 = toOf(contourFinder3.getMinAreaRect(i));
-        }
-    }
     ofSetColor(yellowPrint);
-    minAreaRect3.draw();
-    ofDrawCircle(centroidmax3, 10);
-    
-    //Balls code
-    //for (int i=0; i<10; i++) {
-    //ofSetColor(255, 255, 0);
-    //ofDrawCircle(balls[i].x, balls[i].y, balls[i].radius);
-    //}
+    //minAreaRect3.draw();
+    ofDrawCircle(centroidmax3, 15);
     
     //Atoms Code
     //Loop through all existing atoms.
@@ -397,7 +348,6 @@ void ofApp::draw() {
     
     ofPopMatrix(); // restore the previous coordinate system
     gui.draw();
-    
     
 }
 

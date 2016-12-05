@@ -29,8 +29,23 @@ public:
     void draw();
     void mousePressed(int x, int y, int button);
     
+    double max1;
+    int indx1;
+    ofVec2f centroidmax1;
+    ofPolyline minAreaRect1;
+    int n1;
     
+    double max2;
+    int indx2;
+    ofVec2f centroidmax2;
+    ofPolyline minAreaRect2;
+    int n2;
     
+    double max3;
+    int indx3;
+    ofVec2f centroidmax3;
+    ofPolyline minAreaRect3;
+    int n3;
     
     //Atom Code
     // Initializing the Different atoms dynamically
