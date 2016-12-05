@@ -8,7 +8,7 @@
 
 #include "ofAtom.h"
 
-#define HOST "192.168.1.40"
+#define HOST "192.168.1.38"
 #define PORT 9455
 
 /*

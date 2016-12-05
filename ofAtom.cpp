@@ -125,15 +125,13 @@ int ofAtom::collide(ofAtom* nearAtom){
 
             //MESSAGE:
             if (m_type == 0 && nearAtom->m_type == 1) {
-	    cout<<" EFFECTS Collision:"<<m_type<<" "<<m_posX<<","<<m_posY<<" "<<nearAtom->m_type<<" "<<nearAtom->m_posX<<","<<nearAtom->m_posY<<endl;	
+  //	    cout<<" EFFECTS Collision:"<<m_type<<" "<<m_posX<<","<<m_posY<<" "<<nearAtom->m_type<<" "<<nearAtom->m_posX<<","<<nearAtom->m_posY<<endl;	
+	    return 1;	    
 	    }
             else if (m_type == 0 && nearAtom->m_type == 2) {
- 	    cout<<" DESTROY Collision:"<<m_type<<" "<<m_posX<<","<<m_posY<<" "<<nearAtom->m_type<<" "<<nearAtom->m_posX<<","<<nearAtom->m_posY<<endl;  
+ //	    cout<<" DESTROY Collision:"<<m_type<<" "<<m_posX<<","<<m_posY<<" "<<nearAtom->m_type<<" "<<nearAtom->m_posX<<","<<nearAtom->m_posY<<endl;  
+	    return 2;
 	    }
-
-
-	return 1;  //Collision occured
-
 
 	}
 

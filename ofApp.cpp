@@ -10,15 +10,21 @@ using namespace std;
 #define MAXPreserver 1
 #define MAXDestroyer 1
 #define MAXAtoms 4
+#define RADIUS 30
 
 int indx = 0;
 int flag = 0;
-int n_Creator;
-int n_Preserver;
-int n_Destroyer;
-int n_Atoms;
+int n_Creator = 0;
+int n_Preserver = 0;
+int n_Destroyer = 0;
+int n_Atoms = 0;
 
-int isCollided[MAXCreator];
+//Distances of the two creators from the effect ball. -> For MILESTONE.
+float FxDistance[MAXCreator][MAXPreserver];
+
+
+int isCollidedPreserver[MAXCreator][MAXPreserver];
+int isCollidedDestroyer[MAXCreator][MAXDestroyer];
 
 void ofApp::setup() {
     cam.setup(640, 480);
@@ -50,10 +56,18 @@ void ofApp::setup() {
     PAtom = new ofAtom*[MAXPreserver];
     DAtom = new ofAtom*[MAXDestroyer];
     
-    n_Creator = 3;
+    n_Creator = 2;
     n_Preserver = 1;
     n_Destroyer = 1;
     n_Atoms = n_Creator + n_Preserver + n_Destroyer;
+
+
+    //Distances of the two creators from the effect ball. -> For MILESTONE.
+    float FxDistance[MAXCreator][MAXPreserver];
+ 
+    //Collision status of Creator atoms with Preserver and Dstroyer
+    int isCollidedPreserver[MAXCreator][MAXPreserver];
+    int isCollidedDestroyer[MAXCreator][MAXDestroyer];
 
 
 //    IPAtom = new ofAtom*[1];
@@ -63,11 +77,13 @@ void ofApp::setup() {
 
 
     // Atom Creation TODO: Replace by timed creation in update
-    CAtom[0] = new ofAtom(0,0, 50, 50, 40);
-    PAtom[0] = new ofAtom(1,0, 200, 130, 40);
-    DAtom[0] = new ofAtom(2,0, 300, 60, 40);
+    CAtom[0] = new ofAtom(0,0, 50, 50, RADIUS);
+    PAtom[0] = new ofAtom(1,0, 200, 130, RADIUS);
+    DAtom[0] = new ofAtom(2,0, 300, 60, RADIUS);
     
-    CAtom[1] = new ofAtom(0,1, 50, 150, 40);
+    CAtom[1] = new ofAtom(0,1, 50, 150, RADIUS);
+    //CAtom[2] = new ofAtom(0,2,150,50,40);
+
     //PAtom[1] = new ofAtom(1,1, 200, 30, 40);
     //DAtom[1] = new ofAtom(2,1, 300, 160, 40);
 
@@ -94,12 +110,15 @@ void ofApp::setup() {
 }
 
 void ofApp::update() {
-    if(flag == 0)
-     CAtom[2] = new ofAtom(0,2,150,50,40);
-    flag = 1;
+    
+    for(int j = 0; j < n_Creator; j++)
+    for(int i = 0; i < n_Preserver; i++){
+	isCollidedPreserver[j][i] = 0;
+    }
 
-    for(int i = 0; i < n_Creator; i++){
-	isCollided[i] = 0;
+    for(int j = 0; j < n_Creator; j++)
+    for(int i = 0; i < n_Destroyer; i++){
+	isCollidedDestroyer[j][i] = 0;
     }
 
 
@@ -139,15 +158,15 @@ void ofApp::update() {
 	//Creator
     for(int j = 0; j < n_Creator; j++) {
     	for(int i = 0; i < n_Preserver; i++){
-        	isCollided[j] = CAtom[j]->collide(PAtom[i]);
+        	isCollidedPreserver[j][i] = CAtom[j]->collide(PAtom[i]);
     	}
     	for(int i = 0; i < n_Destroyer; i++){
-        	isCollided[j] = CAtom[j]->collide(DAtom[i]);
+        	isCollidedDestroyer[j][i] = CAtom[j]->collide(DAtom[i]);
     	}
     	for(int i = 0; i < n_Creator; i++){
 		//TODO: Check for distance from other creator atoms
               if(i!=j){
-		CAtom[j]->collide(CAtom[i]);
+	//	CAtom[j]->collide(CAtom[i]);
 		}
     	}
     }
@@ -195,13 +214,44 @@ void ofApp::update() {
     */
     
     //OSC code
-    ofxOscMessage m;
-    m.setAddress("/collisionType");
+    ofxOscMessage m1,m2,m3,m4;
+    m1.setAddress("/collisionType");
+    m2.setAddress("/collisionType");
+    m3.setAddress("/FxDistance1");
+    m4.setAddress("/FxDistance2");  //TODO: Fix for n_Creator number of Sends
 
-    m.addIntArg(isCollided[0]);
-    m.addIntArg(isCollided[1]);
+    for(int j = 0; j < n_Creator; j++){
+    for(int i = 0; i < n_Preserver; i++){
+	if(isCollidedPreserver[j][i] != 0){
+    		
+		m1.addIntArg(1);	// Sending a 1 for collision with preserver
+		sender.sendMessage(m1,false);
+	}
+    }
+  
+    for(int i = 0; i < n_Destroyer; i++){
+    	
+	if(isCollidedDestroyer[j][i] != 0){
+		m2.addIntArg(0);	// Sending a 0 for collision with destruction
+                sender.sendMessage(m2,false);	
+	}
+    }
+    }
 
-    cout<<" -----> "<<isCollided[0]<<" "<<isCollided[1];
+
+    
+    for(int j = 0; j < n_Creator; j++){
+    	    for(int i = 0; i < n_Preserver; i++){
+    		FxDistance[j][i] = ofDist(CAtom[j]->m_posX, CAtom[j]->m_posY, PAtom[i]->m_posX, PAtom[i]->m_posY);
+		//TODO:Send this as OSC message
+	    }
+    }
+    m3.addIntArg(FxDistance[0][0]);
+    sender.sendMessage(m3,false);
+
+    m4.addIntArg(FxDistance[1][0]);
+    sender.sendMessage(m4,false);
+
 
 /*
     for(int i = 0; i < n_Creator; i++) {
@@ -213,7 +263,7 @@ void ofApp::update() {
 */
     //m.addIntArg(balls[0].y);
     //m.addStringArg("down");
-    sender.sendMessage(m, false);
+    //sender.sendMessage(m, false);
     
 }
 
