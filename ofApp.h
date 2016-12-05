@@ -12,14 +12,14 @@
 #define PORT 9455
 
 /*
-struct Ball {
-    int x;
-    int y;
-    int vx;
-    int vy;
-    int radius;
-};
-*/
+ struct Ball {
+ int x;
+ int y;
+ int vx;
+ int vy;
+ int radius;
+ };
+ */
 
 
 class ofApp : public ofBaseApp {
@@ -29,17 +29,17 @@ public:
     void draw();
     void mousePressed(int x, int y, int button);
     
-
     
- 
+    
+    
     //Atom Code
     // Initializing the Different atoms dynamically
     // TODO: Replace with ofAtom **CAtom
     ofAtom **CAtom;
     ofAtom **PAtom;
-    ofAtom **DAtom;        
-
-
+    ofAtom **DAtom;
+    
+    
     ofxGIF::fiGifLoader gifloader;
     ofVideoGrabber cam;
     ofxCv::ContourFinder contourFinder1;
