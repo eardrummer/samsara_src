@@ -18,7 +18,7 @@ int n_Atoms = 0;
 
 void ofApp::setup() {
     cam.setup(1280,720);
-    
+    blur.setup(1280,720,10,.2,4);   
     //targetColor1 is red, targetColor2 is blue, targetColor3 is yellow - Similarly contourFinder1(or 2 or 3), threshold1(or 2 or 3)
     contourFinder1.setMinAreaRadius(10);
     contourFinder1.setMaxAreaRadius(200);
@@ -132,8 +132,9 @@ void ofApp::update() {
             velocity3 = toOf(contourFinder3.getVelocity(i));
         }
     }
-   
-
+  
+    // Blurring for graphics 
+    blur.setScale(1.5);
 
 
     // Creating Atoms at every 2 seconds = 120 frames 
@@ -339,6 +340,9 @@ void ofApp::update() {
 }
 
 void ofApp::draw() {
+
+    blur.begin();    
+
     ofSetColor(255);
     ofBackground(0);
     
@@ -390,7 +394,9 @@ void ofApp::draw() {
     
     ofPopMatrix(); // restore the previous coordinate system
     gui.draw();
-    
+
+    blur.end();
+    blur.draw();
 }
 
 void ofApp::mousePressed(int x, int y, int button) {

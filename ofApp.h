@@ -5,6 +5,7 @@
 #include "ofxGui.h"
 #include "ofxOsc.h"
 #include "ofxGif.h"
+#include "ofxBlur.h"
 
 #include "ofAtom.h"
 
@@ -26,6 +27,8 @@ public:
     void mousePressed(int x, int y, int button);
     void keyPressed(int key);
     
+    ofxBlur blur;
+
     double max1;
     int indx1;
     ofVec2f centroidmax1;
