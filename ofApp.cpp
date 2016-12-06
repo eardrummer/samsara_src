@@ -297,10 +297,12 @@ void ofApp::update() {
     cout<< endl;
     }
    cout<<" Frame Khatm "<<endl;
-*/
+
     for(int i = 0; i < MAXCreator; i++)
     cout<<" "<<LifeCreator[i]<<" ";
     cout<<endl;
+*/
+
 
     //OSC code
     

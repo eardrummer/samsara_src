@@ -10,8 +10,13 @@ ofAtom::ofAtom(int type, int id, int posX , int posY, int radius){
     m_posY = posY;
     m_radius = radius;
     
-    m_velocityX = ofRandom(-7, 7)!= 0 ? ofRandom(-7,7) : 1;
-    m_velocityY = ofRandom(-7, 7)!= 0 ? ofRandom(-7,7) : 1;
+    m_velocityX = ofRandom(-7, 7);
+    m_velocityY = ofRandom(-7, 7);
+   
+    if(m_velocityX == 0)
+	m_velocityX = 1;
+    if(m_velocityY == 0)
+	m_velocityY = 1; 
     
     // Give different Mass to each type of atom
     m_mass = 5;
