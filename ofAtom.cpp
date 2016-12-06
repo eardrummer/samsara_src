@@ -32,28 +32,35 @@ ofAtom::ofAtom(int type, int id, int posX , int posY, int radius){
 
 //-------------------------------------------------------------------------------
 void ofAtom::update(){
+   
+    //updating the virtual atoms
+    if(m_type == 3){
+	m_velocityX = 0;
+	m_velocityY = 0;
+    }
+    else {
+ 
+    	m_posX = m_posX + (m_velocityX);
+    	m_posY = m_posY + (m_velocityY);
     
-    m_posX = m_posX + (m_velocityX);
-    m_posY = m_posY + (m_velocityY);
-    
-    if (m_posX < m_radius || m_posX > ofGetWidth() - m_radius) {
-        m_velocityX = -1 * m_velocityX;
+    	if (m_posX < m_radius || m_posX > ofGetWidth() - m_radius) {
+        	m_velocityX = -1 * m_velocityX;
 
+    	}
+    
+    	if (m_posY < m_radius || m_posY > ofGetHeight() - m_radius) {
+        	m_velocityY = -1 * m_velocityY;
+    	}
+    
+    	if (m_posX < m_radius)
+        	m_posX = m_radius;
+    	if (m_posY < m_radius)
+        	m_posY = m_radius;
+    	if (m_posX > ofGetWidth() - m_radius)
+        	m_posX = ofGetWidth() - m_radius;
+    	if (m_posY > ofGetHeight() - m_radius)
+        	m_posY = ofGetHeight() - m_radius;
     }
-    
-    if (m_posY < m_radius || m_posY > ofGetHeight() - m_radius) {
-        m_velocityY = -1 * m_velocityY;
-    }
-    
-    if (m_posX < m_radius)
-        m_posX = m_radius;
-    if (m_posY < m_radius)
-        m_posY = m_radius;
-    if (m_posX > ofGetWidth() - m_radius)
-        m_posX = ofGetWidth() - m_radius;
-    if (m_posY > ofGetHeight() - m_radius)
-        m_posY = ofGetHeight() - m_radius;
-    
 }
 
 //--------------------------------------------------------------------------------
@@ -65,7 +72,7 @@ void ofAtom::draw(){
         ofSetColor(255,255,0);
     else if(m_type == 1)
         ofSetColor(150,255,0);
-    else
+    else if(m_type == 2)
         ofSetColor(255,150,0);
     
     ofDrawCircle(m_posX, m_posY, m_radius);
@@ -91,18 +98,22 @@ int ofAtom::collide(ofAtom* nearAtom){
 
          	nearAtom->m_velocityX = newVelX2;
          	nearAtom->m_velocityY = newVelY2;
-         }	 
+         
+		nearAtom->update();
+		update();
+
+	}	 
 	else {
 
 		m_velocityX *= -1;
                 m_velocityY *= -1;
 
+                update();
+
 	}	
         // cout<<"VELOCITY"<<" "<<m_velocityX<<" "<<m_velocityY<<endl;
          
          
-         this->update();
-         nearAtom->update();
          // To check if one atom is overlapping another atom
          while(ofDist(nearAtom->m_posX, nearAtom->m_posY, m_posX, m_posY) < nearAtom->m_radius + m_radius){
 

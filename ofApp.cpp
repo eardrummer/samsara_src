@@ -58,9 +58,10 @@ void ofApp::setup() {
 
 
     //Initializing DyingCreator - Status to check if that Creator is currently dying
-    for(int i = 0; i < MAXCreator; i++)
+    for(int i = 0; i < MAXCreator; i++){
         DyingCreator[i] = 0;
-
+        dyingCreatorPosition[i].set(0,0);
+    }
 
     //Initializing 3 virtual atoms for image processing
     virtualAtom = new ofAtom*[3];
@@ -259,6 +260,7 @@ void ofApp::update() {
         }
         // Virtual Atom Collisions
 	for(int i = 0; i < 3; i ++){
+		if(LifeCreator[j])
 		CAtom[j]->collide(virtualAtom[i]);
 	}
 
@@ -304,7 +306,20 @@ void ofApp::update() {
         }
 
     }
-    //TODO: Insert Collision with Virtual Atoms
+
+
+    // TAKING CARE OF DYING CREATOR ATOMS
+    for(int i = 0; i < MAXCreator; i++){
+	if(DyingCreator[i] == 1){
+		if(ofGetElapsedTimef() < DYINGTIME){
+			
+			//TODO: ADD CODE FOR GRANULATING DYING ATOM 
+		}
+		else
+		DyingCreator[i] = 0;
+	}
+	
+    }
 
     // EFFECTS MATRIX 
 
@@ -420,7 +435,13 @@ void ofApp::draw() {
     }
    
     //TODO: Dying Atoms graphics
+    for(int i = 0; i < MAXCreator; i++){
+	
+	if(DyingCreator[i] == 1 ){
+		// TODO:
 
+	}
+    } 
  
     ofPopMatrix(); // restore the previous coordinate system
 
@@ -468,7 +489,9 @@ void ofApp::Destroy(ofAtom* Atom){
 	
 	LifeCreator[Atom->m_id] = 0;
         DyingCreator[Atom->m_id] = 1;
-        
+        dyingCreatorPosition[Atom->m_id].set(Atom->m_posX,Atom->m_posY);
+	ofResetElapsedTimeCounter(); 
+
         // Free the memory assigned to Atom
 	delete [] Atom;
 

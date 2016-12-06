@@ -19,6 +19,8 @@
 #define RADIUS 30
 #define FRAMERATE 60
 #define BEATRATE 2 
+#define DYINGTIME 1
+
 
 class ofApp : public ofBaseApp {
 public:
@@ -56,6 +58,9 @@ public:
 
     //Initializing Virtual Atoms for Image Processing Gesture
     ofAtom **virtualAtom;
+
+    //Position of each dying creator atom
+    ofVec2f dyingCreatorPosition[MAXCreator];
 
     //Distances of the two creators from the effect ball. -> For MILESTONE.
     float FxMatrix[MAXCreator][MAXPreserver];
