@@ -11,6 +11,11 @@
 #define HOST "10.80.138.34"
 #define PORT 9455
 
+#define MAXCreator 5
+#define MAXPreserver 5
+#define MAXDestroyer 2
+#define MAXAtoms 12
+#define RADIUS 30
 
 
 class ofApp : public ofBaseApp {
@@ -45,6 +50,17 @@ public:
     ofAtom **CAtom;
     ofAtom **PAtom;
     ofAtom **DAtom;
+
+    //Distances of the two creators from the effect ball. -> For MILESTONE.
+    float FxDistance[MAXCreator][MAXPreserver];
+
+    //Collision Status of each Creator with all other Atoms    
+    int isCollidedPreserver[MAXCreator][MAXPreserver];
+    int isCollidedDestroyer[MAXCreator][MAXDestroyer];
+    
+    //Fx ID and Distances for each Creator
+    int FxIdCreator[MAXCreator];
+    float FxDistanceCreator[MAXCreator];
     
     
     ofxGIF::fiGifLoader gifloader;

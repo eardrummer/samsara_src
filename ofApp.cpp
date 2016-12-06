@@ -6,12 +6,8 @@ using namespace ofxCv;
 using namespace cv;
 using namespace std;
 
-#define MAXCreator 5
-#define MAXPreserver 5
-#define MAXDestroyer 2
-#define MAXAtoms 12
-#define RADIUS 30
-
+// 1 to Enable velocity control in Image processing
+int variableVelocityFlag = 0;
 int indx = 0;
 int flag = 0;
 int n_Creator = 0;
@@ -22,9 +18,6 @@ int n_Atoms = 0;
 //Distances of the two creators from the effect ball. -> For MILESTONE.
 float FxDistance[MAXCreator][MAXPreserver];
 
-
-int isCollidedPreserver[MAXCreator][MAXPreserver];
-int isCollidedDestroyer[MAXCreator][MAXDestroyer];
 
 void ofApp::setup() {
     cam.setup(1280,720);
@@ -63,15 +56,9 @@ void ofApp::setup() {
     n_Destroyer = 1;
     n_Atoms = n_Creator + n_Preserver + n_Destroyer;
     */
-    
-    //Distances of the two creators from the effect ball. -> For MILESTONE.
-    float FxDistance[MAXCreator][MAXPreserver];
-    
-    //Collision status of Creator atoms with Preserver and Dstroyer
-    int isCollidedPreserver[MAXCreator][MAXPreserver];
-    int isCollidedDestroyer[MAXCreator][MAXDestroyer];
-    
-    
+     
+
+
     //    IPAtom = new ofAtom*[1];
     //    IPAtom[0] = new ofAtom();
     
@@ -170,24 +157,39 @@ void ofApp::update() {
             velocity3 = toOf(contourFinder3.getVelocity(i));
         }
     }
-    
+   
+
+
+
+    // Creating Atoms at every 2 seconds = 120 frames 
     if(n_Creator < MAXCreator && (ofGetFrameNum()%120==0))
     {
         CAtom[n_Creator] = new ofAtom(0,n_Creator,centroidmax1.x,centroidmax1.y,RADIUS);
+	
+	if(variableVelocityFlag)
+	CAtom[n_Creator]->assignVelocity(velocity1.x,velocity1.y);
         n_Creator++;
     }
     if(n_Preserver < MAXPreserver && (ofGetFrameNum() > (120*MAXCreator) && ofGetFrameNum()%120 == 0))
     {
         PAtom[n_Preserver] = new ofAtom(1,n_Preserver,centroidmax2.x,centroidmax2.y,RADIUS);
-        n_Preserver++;
+        
+	if(variableVelocityFlag)
+	PAtom[n_Preserver]->assignVelocity(velocity2.x,velocity2.y);
+	n_Preserver++;
     }
     if(n_Destroyer < MAXDestroyer && (ofGetFrameNum() > (120*(MAXCreator + MAXPreserver)) && ofGetFrameNum()%120 == 0))
     {
         DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer,centroidmax3.x,centroidmax3.y,RADIUS);
-        n_Destroyer++;
+        
+	if(variableVelocityFlag)
+	DAtom[n_Destroyer]->assignVelocity(velocity3.x,velocity3.y);
+	n_Destroyer++;
     }
     
     
+
+    //Initializing Collision status matrix
     for(int j = 0; j < n_Creator; j++)
         for(int i = 0; i < n_Preserver; i++){
             isCollidedPreserver[j][i] = 0;
