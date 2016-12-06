@@ -15,9 +15,6 @@ int n_Preserver = 0;
 int n_Destroyer = 0;
 int n_Atoms = 0;
 
-//Distances of the two creators from the effect ball. -> For MILESTONE.
-float FxDistance[MAXCreator][MAXPreserver];
-
 
 void ofApp::setup() {
     cam.setup(1280,720);
@@ -47,16 +44,21 @@ void ofApp::setup() {
     //Initializing one Atom of each type
     CAtom = new ofAtom*[MAXCreator];
     PAtom = new ofAtom*[MAXPreserver];
-    DAtom = new ofAtom*[MAXDestroyer];
-    
-    // REMOVE FOR STATIC INITIALIZATION
-    /*
-    n_Creator = 2;
-    n_Preserver = 1;
-    n_Destroyer = 1;
-    n_Atoms = n_Creator + n_Preserver + n_Destroyer;
-    */
-     
+    DAtom = new ofAtom*[MAXDestroyer];  
+
+    //Initializing FxMatrix (Distances of each Creator from Effects = -1 before the pair exists)
+    for(int i = 0; i < MAXCreator; i++)
+	for(int j = 0; j < MAXPreserver; j++)
+		FxMatrix[i][j] = -1;
+
+    //Initializing LifeCreator - status of each Creator
+    for(int i = 0; i < MAXCreator; i++)
+	LifeCreator[i] = 0;
+
+
+    //Initializing DyingCreator - Status to check if that Creator is currently dying
+    for(int i = 0; i < MAXCreator; i++)
+        DyingCreator[i] = 0;
 
 
     //    IPAtom = new ofAtom*[1];
@@ -64,34 +66,7 @@ void ofApp::setup() {
     
     ofSetFrameRate(60);
     
-    
-    // REMOVE FOR STATIC INITIALIZATION
-    
-    /*
-    
-    // Atom Creation TODO: Replace by timed creation in update
-    CAtom[0] = new ofAtom(0,0, 50, 50, RADIUS);
-    PAtom[0] = new ofAtom(1,0, 200, 130, RADIUS);
-    DAtom[0] = new ofAtom(2,0, 300, 60, RADIUS);
-    
-    CAtom[1] = new ofAtom(0,1, 50, 150, RADIUS);
-    //CAtom[2] = new ofAtom(0,2,150,50,40);
-    
-    //PAtom[1] = new ofAtom(1,1, 200, 30, 40);
-    //DAtom[1] = new ofAtom(2,1, 300, 160, 40);
-    
-    */
-    
-    /*
-     for (int i=0; i<10; i++) {
-     balls[i].x = ofRandomWidth();
-     balls[i].y = ofRandomHeight();
-     balls[i].vx = ofRandom(-10,10);
-     balls[i].vy = ofRandom(-10,10);
-     balls[i].radius = ofRandom(10,40);
-     }
-     */
-    
+     
     //OSC Code
     // open an outgoing connection to HOST:PORT
     sender.setup(HOST, PORT);
@@ -162,14 +137,33 @@ void ofApp::update() {
 
 
     // Creating Atoms at every 2 seconds = 120 frames 
-    if(n_Creator < MAXCreator && (ofGetFrameNum()%120==0))
-    {
-        CAtom[n_Creator] = new ofAtom(0,n_Creator,centroidmax1.x,centroidmax1.y,RADIUS);
+    if((ofGetFrameNum()%120==0))
+    {   
+	indexCreator = MAXCreator;   
+	for(int i = 0; i < MAXCreator; i++){
+		if(LifeCreator[i] == 0){
+			indexCreator = i;    // First Available Creator ID
+			break;
+		}
+	}
 	
-	if(variableVelocityFlag)
-	CAtom[n_Creator]->assignVelocity(velocity1.x,velocity1.y);
-        n_Creator++;
+	//Checking if there is space in the environment for creating a Creator Atom
+	if( indexCreator < MAXCreator){
+	
+        	CAtom[indexCreator] = new ofAtom(0,indexCreator,centroidmax1.x,centroidmax1.y,RADIUS);
+	
+		if(variableVelocityFlag)
+		CAtom[indexCreator]->assignVelocity(velocity1.x,velocity1.y);
+
+		LifeCreator[indexCreator] = 1;
+        
+		// Update n_Creator if it hasnt reached MAX even once.	
+		if(n_Creator < MAXCreator)
+		n_Creator++;
+	}
     }
+
+    // Creating Preserver Atoms at every 2 seconds
     if(n_Preserver < MAXPreserver && (ofGetFrameNum() > (120*MAXCreator) && ofGetFrameNum()%120 == 0))
     {
         PAtom[n_Preserver] = new ofAtom(1,n_Preserver,centroidmax2.x,centroidmax2.y,RADIUS);
@@ -178,6 +172,8 @@ void ofApp::update() {
 	PAtom[n_Preserver]->assignVelocity(velocity2.x,velocity2.y);
 	n_Preserver++;
     }
+
+    // Creating Destroyer Atoms at every 2 seconds
     if(n_Destroyer < MAXDestroyer && (ofGetFrameNum() > (120*(MAXCreator + MAXPreserver)) && ofGetFrameNum()%120 == 0))
     {
         DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer,centroidmax3.x,centroidmax3.y,RADIUS);
@@ -190,15 +186,22 @@ void ofApp::update() {
     
 
     //Initializing Collision status matrix
-    for(int j = 0; j < n_Creator; j++)
-        for(int i = 0; i < n_Preserver; i++){
+    for(int j = 0; j < MAXCreator; j++)
+        for(int i = 0; i < MAXPreserver; i++){
             isCollidedPreserver[j][i] = 0;
         }
     
-    for(int j = 0; j < n_Creator; j++)
-        for(int i = 0; i < n_Destroyer; i++){
+    for(int j = 0; j < MAXCreator; j++)
+        for(int i = 0; i < MAXDestroyer; i++){
             isCollidedDestroyer[j][i] = 0;
         }
+
+    //Initializing FxMatrix every update frame
+    for(int i = 0; i < MAXCreator; i++)
+        for(int j = 0; j < MAXPreserver; j++)
+                FxMatrix[i][j] = -1;
+
+
     
     //For drawing background
     if (ofGetFrameNum() % 2)
@@ -208,8 +211,10 @@ void ofApp::update() {
     }
     
     //Atoms Code
-    for (int i = 0; i < n_Creator; i++)
-        CAtom[i]->update();
+    for (int i = 0; i < n_Creator; i++){
+	if(LifeCreator[i])
+	CAtom[i]->update();
+    }
     
     for (int i = 0; i < n_Preserver; i++)
         PAtom[i]->update();
@@ -217,18 +222,32 @@ void ofApp::update() {
     for (int i = 0; i < n_Destroyer; i++)
         DAtom[i]->update();
     
-    //Checking for Atoms closest to each.
+    //COLLISION CHECK
+
+    //Checking for Atoms Collisions
     //Creator
     for(int j = 0; j < n_Creator; j++) {
         for(int i = 0; i < n_Preserver; i++){
+	    
+	    if(LifeCreator[j])
             isCollidedPreserver[j][i] = CAtom[j]->collide(PAtom[i]);
         }
+
+	// Destruction Collisions
         for(int i = 0; i < n_Destroyer; i++){
+
+	    if(LifeCreator[j])
             isCollidedDestroyer[j][i] = CAtom[j]->collide(DAtom[i]);
+	    
+	    if(isCollidedDestroyer[j][i] == 2)
+		Destroy(CAtom[j]);
+
         }
         for(int i = 0; i < n_Creator; i++){
             //TODO: Check for distance from other creator atoms
-            if(i!=j){
+            
+	    if(LifeCreator[j] && LifeCreator[i])
+	    if(i!=j){
               	CAtom[j]->collide(CAtom[i]);
             }
         }
@@ -257,13 +276,39 @@ void ofApp::update() {
             }
             
         }
-    
+
+
+    // EFFECTS MATRIX 
+
+    for(int j = 0; j < n_Creator; j++){
+	for(int i = 0; i < n_Preserver; i++){
+
+	    if(LifeCreator[j])
+            FxMatrix[j][i] = CAtom[j]->atomFxDist(PAtom[i]);
+	}
+    }
+
+    // Debugging Display
+/*
+    for(int j = 0; j < MAXCreator; j++){
+	for(int i = 0; i < MAXPreserver; i++){
+	   cout<<FxMatrix[j][i]<<" ";
+	}
+    cout<< endl;
+    }
+   cout<<" Frame Khatm "<<endl;
+*/
+    for(int i = 0; i < MAXCreator; i++)
+    cout<<" "<<LifeCreator[i]<<" ";
+    cout<<endl;
+
     //OSC code
+    
+    // Collisions and Fx
     ofxOscMessage m1,m2,m3,m4;
     m1.setAddress("/collisionType");
     m2.setAddress("/collisionType");
-    m3.setAddress("/FxDistance1");
-    m4.setAddress("/FxDistance2");  //TODO: Fix for n_Creator number of Sends
+    m3.setAddress("/FxMatrix"); // TODO: Bundle entire Matrix as OSC msg
     
     for(int j = 0; j < n_Creator; j++){
         for(int i = 0; i < n_Preserver; i++){
@@ -283,17 +328,11 @@ void ofApp::update() {
         }
     }
     
-    for(int j = 0; j < n_Creator; j++){
-        for(int i = 0; i < n_Preserver; i++){
-            FxDistance[j][i] = ofDist(CAtom[j]->m_posX, CAtom[j]->m_posY, PAtom[i]->m_posX, PAtom[i]->m_posY);
-            //TODO:Send this as OSC message
-        }
-    }
-    m3.addIntArg(FxDistance[0][0]);
+    m3.addIntArg(FxMatrix[0][0]);
     sender.sendMessage(m3,false);
     
-    m4.addIntArg(FxDistance[1][0]);
-    sender.sendMessage(m4,false);
+ //   m4.addIntArg(FxMatrix[1][0]);
+ //   sender.sendMessage(m4,false);
     
 }
 
@@ -336,6 +375,8 @@ void ofApp::draw() {
     //Atoms Code
     //Loop through all existing atoms.
     for(int i = 0; i < n_Creator; i++){
+
+        if(LifeCreator[i])
         CAtom[i]->draw();
     }
     for(int i = 0; i < n_Preserver; i++){
@@ -362,6 +403,7 @@ void ofApp::keyPressed(int key){
 	case 'q':
         case 'Q': 
 		for(int i = 0; i < n_Creator; i++){
+			if(LifeCreator[i])
 			delete [] CAtom[i];
 		} 
                 for(int i = 0; i < n_Preserver; i++){
@@ -374,5 +416,23 @@ void ofApp::keyPressed(int key){
 
     }
 
+}
+
+
+
+//------------------------------------------------------------------------
+// DESTRUCTION CODE
+
+void ofApp::Destroy(ofAtom* Atom){
+
+// TODO: What Destroy Graphics to use a) Shrinks b) Breaks into smaller balls
+	
+	LifeCreator[Atom->m_id] = 0;
+        DyingCreator[Atom->m_id] = 1;
+        
+        // Free the memory assigned to Atom
+	delete [] Atom;
 
 }
+
+

@@ -52,17 +52,25 @@ public:
     ofAtom **DAtom;
 
     //Distances of the two creators from the effect ball. -> For MILESTONE.
-    float FxDistance[MAXCreator][MAXPreserver];
+    float FxMatrix[MAXCreator][MAXPreserver];
 
     //Collision Status of each Creator with all other Atoms    
     int isCollidedPreserver[MAXCreator][MAXPreserver];
     int isCollidedDestroyer[MAXCreator][MAXDestroyer];
-    
-    //Fx ID and Distances for each Creator
-    int FxIdCreator[MAXCreator];
-    float FxDistanceCreator[MAXCreator];
-    
-    
+   
+    //Index to identify a Creator
+    int indexCreator = 0;
+
+    //Life of the Creators -> LifeCreator[i] = 1 (i exists in the system), = 0 (i not in the system)
+    int LifeCreator[MAXCreator];
+
+    //Dying State of the Creators -> DyingCreator[i] = 1 (i is currently dying)  
+    int DyingCreator[MAXCreator];   
+
+    //Destruction Function for the Atom that gets hit
+    void Destroy(ofAtom* Atom);
+
+ 
     ofxGIF::fiGifLoader gifloader;
     ofVideoGrabber cam;
     ofxCv::ContourFinder contourFinder1;

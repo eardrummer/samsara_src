@@ -174,37 +174,13 @@ void assign(ofAtom* Atom, int type, int id, int posX, int posY, int velocityX, i
 }
 
 //----------------------------------------------------------------------------------------
-float ofAtom::atomFxDist(ofAtom** PAtom, int n_Preserver){
+float ofAtom::atomFxDist(ofAtom* PAtom){
 
-float Max = 0, Distance;
-
-	for(int i = 0; i < n_Preserver; i++){
-		
-		Distance = ofDist(PAtom[i]->m_posX, PAtom[i]->m_posY, m_posX, m_posY);
-		if(Max < Distance)
-			Max = Distance;
-
-	}
-return Max;
+	float Distance;
+	Distance = ofDist(PAtom->m_posX, PAtom->m_posY, m_posX, m_posY);
+	
+	return Distance;
 }
-
-//----------------------------------------------------------------------------------------------
-int ofAtom::atomFxId(ofAtom** PAtom, int n_Preserver){
-
-float Max = 0, Distance;
-int id = -1;
-
-        for(int i = 0; i < n_Preserver; i++){
-
-                Distance = ofDist(PAtom[i]->m_posX, PAtom[i]->m_posY, m_posX, m_posY);
-                if(Max < Distance){
-                        Max = Distance;
-			id = PAtom[i]->m_id;
-		}
-        }
-return id;
-}
-
 
 //---------------------------------------------------------------------------------------------
 

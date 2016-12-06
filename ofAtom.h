@@ -30,8 +30,7 @@ public:
     int collide(ofAtom* nearAtom);		//nearAtom is the Atom nearest to this.ofAtom
     void assignVelocity(int velocityX, int velocityY); 
     void assign(ofAtom* Atom, int type, int id, int posX, int posY, int velocityX, int velocityY);
-    float atomFxDist(ofAtom** PAtom, int n_Preserver);		//Calculates distance from closest Fx Atom (Preserver Atom)
-    int atomFxId(ofAtom** PAtom, int n_Preserver);
+    float atomFxDist(ofAtom* PAtom);		//Calculates distance from closest Fx Atom (Preserver Atom)
     int death(ofAtom* Atom);
 
 };
