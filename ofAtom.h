@@ -17,7 +17,7 @@ public:
     //Destructor TODO:
     
     //variables
-    int m_type; // Type of atom. 0 - Constuctor, 1 - Preserver/Fx, 2 - Destroyer
+    int m_type; // Type of atom. 0 - Constuctor, 1 - Preserver/Fx, 2 - Destroyer, 3 - Virtual
     int m_id;
     int m_velocityX;
     int m_velocityY;
@@ -29,9 +29,8 @@ public:
     //Colliding function
     int collide(ofAtom* nearAtom);		//nearAtom is the Atom nearest to this.ofAtom
     void assignVelocity(int velocityX, int velocityY); 
-    void assign(ofAtom* Atom, int type, int id, int posX, int posY, int velocityX, int velocityY);
+    void assign(int type, int id, int posX, int posY, int velocityX, int velocityY, int radius);
     float atomFxDist(ofAtom* PAtom);		//Calculates distance from closest Fx Atom (Preserver Atom)
-    int death(ofAtom* Atom);
 
 };
 

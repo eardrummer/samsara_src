@@ -17,7 +17,8 @@
 #define MAXDestroyer 2
 #define MAXAtoms 12
 #define RADIUS 30
-
+#define FRAMERATE 60
+#define BEATRATE 2 
 
 class ofApp : public ofBaseApp {
 public:
@@ -49,10 +50,12 @@ public:
     
     //Atom Code
     // Initializing the Different atoms dynamically
-    // TODO: Replace with ofAtom **CAtom
     ofAtom **CAtom;
     ofAtom **PAtom;
     ofAtom **DAtom;
+
+    //Initializing Virtual Atoms for Image Processing Gesture
+    ofAtom **virtualAtom;
 
     //Distances of the two creators from the effect ball. -> For MILESTONE.
     float FxMatrix[MAXCreator][MAXPreserver];

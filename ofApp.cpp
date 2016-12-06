@@ -18,7 +18,8 @@ int n_Atoms = 0;
 
 void ofApp::setup() {
     cam.setup(1280,720);
-    blur.setup(1280,720,10,.2,4);   
+    blur.setup(1280,720,5,.2,10);
+   
     //targetColor1 is red, targetColor2 is blue, targetColor3 is yellow - Similarly contourFinder1(or 2 or 3), threshold1(or 2 or 3)
     contourFinder1.setMinAreaRadius(10);
     contourFinder1.setMaxAreaRadius(200);
@@ -61,10 +62,15 @@ void ofApp::setup() {
         DyingCreator[i] = 0;
 
 
-    //    IPAtom = new ofAtom*[1];
-    //    IPAtom[0] = new ofAtom();
+    //Initializing 3 virtual atoms for image processing
+    virtualAtom = new ofAtom*[3];
+    virtualAtom[0] = new ofAtom(3, 0, 0, 0 , RADIUS);
+    virtualAtom[1] = new ofAtom(3, 1, 0, 0 , RADIUS);
+    virtualAtom[2] = new ofAtom(3, 2, 0, 0 , RADIUS);
     
-    ofSetFrameRate(60);
+    
+    // Setting Frame Rate for processing
+    ofSetFrameRate(FRAMERATE);
     
      
     //OSC Code
@@ -132,13 +138,20 @@ void ofApp::update() {
             velocity3 = toOf(contourFinder3.getVelocity(i));
         }
     }
+
+
+    //Creating Virtual Atoms at the detected centroids.
+    virtualAtom[0]->assign(3,0,centroidmax1.x, centroidmax1.y,0,0, RADIUS); 
+    virtualAtom[1]->assign(3,1,centroidmax2.x, centroidmax2.y,0,0, RADIUS);
+    virtualAtom[2]->assign(3,2,centroidmax2.x, centroidmax2.y,0,0, RADIUS);
+
   
     // Blurring for graphics 
-    blur.setScale(1.5);
+    blur.setScale(0.2);
 
 
-    // Creating Atoms at every 2 seconds = 120 frames 
-    if((ofGetFrameNum()%120==0))
+    // Creating Atoms at every BEATRATE seconds
+    if((ofGetFrameNum()%(BEATRATE*FRAMERATE)==0))
     {   
 	indexCreator = MAXCreator;   
 	for(int i = 0; i < MAXCreator; i++){
@@ -165,7 +178,7 @@ void ofApp::update() {
     }
 
     // Creating Preserver Atoms at every 2 seconds
-    if(n_Preserver < MAXPreserver && (ofGetFrameNum() > (120*MAXCreator) && ofGetFrameNum()%120 == 0))
+    if(n_Preserver < MAXPreserver && (ofGetFrameNum() > (BEATRATE*FRAMERATE*MAXCreator) && ofGetFrameNum()%(BEATRATE*FRAMERATE) == 0))
     {
         PAtom[n_Preserver] = new ofAtom(1,n_Preserver,centroidmax2.x,centroidmax2.y,RADIUS);
         
@@ -175,7 +188,7 @@ void ofApp::update() {
     }
 
     // Creating Destroyer Atoms at every 2 seconds
-    if(n_Destroyer < MAXDestroyer && (ofGetFrameNum() > (120*(MAXCreator + MAXPreserver)) && ofGetFrameNum()%120 == 0))
+    if(n_Destroyer < MAXDestroyer && (ofGetFrameNum() > ((BEATRATE*FRAMERATE)*(MAXCreator + MAXPreserver)) && ofGetFrameNum()%(BEATRATE*FRAMERATE) == 0))
     {
         DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer,centroidmax3.x,centroidmax3.y,RADIUS);
         
@@ -244,6 +257,11 @@ void ofApp::update() {
 		Destroy(CAtom[j]);
 
         }
+        // Virtual Atom Collisions
+	for(int i = 0; i < 3; i ++){
+		CAtom[j]->collide(virtualAtom[i]);
+	}
+
         for(int i = 0; i < n_Creator; i++){
             //TODO: Check for distance from other creator atoms
             
@@ -260,24 +278,33 @@ void ofApp::update() {
             PAtom[j]->collide(DAtom[i]);
         }
         for(int i = 0; i < n_Preserver; i++){
-            //TODO: Make multiple Preserver atoms collide
+         
             if(i!=j){
                 PAtom[j]->collide(PAtom[i]);
             }
         }
+        // Virtual Atom Collisions
+        for(int i = 0; i < 3; i ++){
+                PAtom[j]->collide(virtualAtom[i]);
+        }
         
     }
     //Destroyer
-    for(int j = 0; j < n_Destroyer; j++)
+    for(int j = 0; j < n_Destroyer; j++){
         for(int i = 0; i < n_Destroyer; i++){
-            //TODO: Check for distance from other creator atoms
-            
+                      
             if(i!=j){
                 DAtom[j]->collide(DAtom[i]);
             }
             
         }
+        // Virtual Atom Collisions
+        for(int i = 0; i < 3; i ++){
+                DAtom[j]->collide(virtualAtom[i]);
+        }
 
+    }
+    //TODO: Insert Collision with Virtual Atoms
 
     // EFFECTS MATRIX 
 
@@ -391,12 +418,16 @@ void ofApp::draw() {
     for(int i = 0; i < n_Destroyer; i++){
         DAtom[i]->draw();
     }
-    
+   
+    //TODO: Dying Atoms graphics
+
+ 
     ofPopMatrix(); // restore the previous coordinate system
-    gui.draw();
 
     blur.end();
     blur.draw();
+
+    gui.draw();
 }
 
 void ofApp::mousePressed(int x, int y, int button) {
