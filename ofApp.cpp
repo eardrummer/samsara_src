@@ -57,10 +57,11 @@ void ofApp::setup() {
 	LifeCreator[i] = 0;
 
 
-    //Initializing DyingCreator - Status to check if that Creator is currently dying
+    //Initializing dying Environment - Status to check if that Creator is currently dying and its pos,vel
+    dyingEnvironment = new ofDyingAtom*[MAXCreator];
+
     for(int i = 0; i < MAXCreator; i++){
-        DyingCreator[i] = 0;
-        dyingCreatorPosition[i].set(0,0);
+        dyingEnvironment[i] = new ofDyingAtom(0,0,0,0,0);
     }
 
     //Initializing 3 virtual atoms for image processing
@@ -251,11 +252,11 @@ void ofApp::update() {
 	// Destruction Collisions
         for(int i = 0; i < n_Destroyer; i++){
 
-	    if(LifeCreator[j])
-            isCollidedDestroyer[j][i] = CAtom[j]->collide(DAtom[i]);
-	    
+	    if(LifeCreator[j]){
+            isCollidedDestroyer[j][i] = CAtom[j]->collide(DAtom[i]); 
 	    if(isCollidedDestroyer[j][i] == 2)
 		Destroy(CAtom[j]);
+     	    }			
 
         }
         // Virtual Atom Collisions
@@ -307,19 +308,6 @@ void ofApp::update() {
 
     }
 
-
-    // TAKING CARE OF DYING CREATOR ATOMS
-    for(int i = 0; i < MAXCreator; i++){
-	if(DyingCreator[i] == 1){
-		if(ofGetElapsedTimef() < DYINGTIME){
-			
-			//TODO: ADD CODE FOR GRANULATING DYING ATOM 
-		}
-		else
-		DyingCreator[i] = 0;
-	}
-	
-    }
 
     // EFFECTS MATRIX 
 
@@ -434,14 +422,22 @@ void ofApp::draw() {
         DAtom[i]->draw();
     }
    
-    //TODO: Dying Atoms graphics
+    // DYING CREATOR ATOMS GRAPHICS
     for(int i = 0; i < MAXCreator; i++){
-	
-	if(DyingCreator[i] == 1 ){
-		// TODO:
+        if(dyingEnvironment[i]->statusCheck() == 1){
+                if(ofGetElapsedTimef() < DYINGTIME){
 
-	}
-    } 
+                	Granulate(dyingEnvironment[i]);
+			dyingEnvironment[i]->m_dyingTimeCounter++;
+		}
+                else{
+                dyingEnvironment[i]->statusAssign(0);
+		dyingEnvironment[i]->m_dyingTimeCounter = 0;
+		}	
+        }
+
+    }
+
  
     ofPopMatrix(); // restore the previous coordinate system
 
@@ -465,6 +461,8 @@ void ofApp::keyPressed(int key){
 		for(int i = 0; i < n_Creator; i++){
 			if(LifeCreator[i])
 			delete [] CAtom[i];
+
+			delete [] dyingEnvironment[i];
 		} 
                 for(int i = 0; i < n_Preserver; i++){
                         delete [] PAtom[i];
@@ -484,12 +482,11 @@ void ofApp::keyPressed(int key){
 // DESTRUCTION CODE
 
 void ofApp::Destroy(ofAtom* Atom){
-
-// TODO: What Destroy Graphics to use a) Shrinks b) Breaks into smaller balls
 	
 	LifeCreator[Atom->m_id] = 0;
-        DyingCreator[Atom->m_id] = 1;
-        dyingCreatorPosition[Atom->m_id].set(Atom->m_posX,Atom->m_posY);
+        dyingEnvironment[Atom->m_id]->assign(Atom->m_posX, Atom->m_posY, Atom->m_velocityX, Atom->m_velocityY, 1,0);      
+
+        // This sets a reset on the counter upto DYINGTIME	
 	ofResetElapsedTimeCounter(); 
 
         // Free the memory assigned to Atom
@@ -497,4 +494,27 @@ void ofApp::Destroy(ofAtom* Atom){
 
 }
 
+void ofApp::Granulate(ofDyingAtom * GranulateAtom){
+ //TODO: ADD GRAPHICS TO BE CALLED IN draw() when collision happens
+    
+        int scale = GranulateAtom->m_dyingTimeCounter;
+	int directionX = ofSign(GranulateAtom->m_velocityX);
+	int directionY = ofSign(GranulateAtom->m_velocityY);
+        int alpha = 5; // Rate at which the granules move away
 
+	int opacity = 500 - (10 + (scale * 10));
+	
+        ofFill();
+        ofSetColor(255,255,0,opacity);
+
+
+	ofDrawCircle(GranulateAtom->m_posX, GranulateAtom->m_posY, RADIUS/3 );
+        ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX), GranulateAtom->m_posY, RADIUS/3);
+        ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX/2), GranulateAtom->m_posY, RADIUS/3);
+        ofDrawCircle(GranulateAtom->m_posX, GranulateAtom->m_posY + (alpha*scale * directionY), RADIUS/3);
+        ofDrawCircle(GranulateAtom->m_posX, GranulateAtom->m_posY + (alpha*scale * directionY/2), RADIUS/3);
+        ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX), GranulateAtom->m_posY + (alpha*scale*directionY), RADIUS/3);
+        ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX/2), GranulateAtom->m_posY + (alpha*scale*directionY/2), RADIUS/3);
+        ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX*3/2), GranulateAtom->m_posY + (alpha*scale*directionY/2), RADIUS/3);	
+        ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX/2), GranulateAtom->m_posY + (alpha*scale*directionY*3/2), RADIUS/3);
+}

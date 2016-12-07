@@ -8,18 +8,19 @@
 #include "ofxBlur.h"
 
 #include "ofAtom.h"
+#include "ofDyingAtom.h"
 
 #define HOST "10.80.138.34"
 #define PORT 9455
 
 #define MAXCreator 5
 #define MAXPreserver 5
-#define MAXDestroyer 2
+#define MAXDestroyer 5
 #define MAXAtoms 12
 #define RADIUS 30
-#define FRAMERATE 60
+#define FRAMERATE 30
 #define BEATRATE 2 
-#define DYINGTIME 1
+#define DYINGTIME 3
 
 
 class ofApp : public ofBaseApp {
@@ -59,8 +60,8 @@ public:
     //Initializing Virtual Atoms for Image Processing Gesture
     ofAtom **virtualAtom;
 
-    //Position of each dying creator atom
-    ofVec2f dyingCreatorPosition[MAXCreator];
+    //Status of each dying creator atom
+    ofDyingAtom **dyingEnvironment;
 
     //Distances of the two creators from the effect ball. -> For MILESTONE.
     float FxMatrix[MAXCreator][MAXPreserver];
@@ -80,7 +81,8 @@ public:
 
     //Destruction Function for the Atom that gets hit
     void Destroy(ofAtom* Atom);
-
+    void Granulate(ofDyingAtom * GranulateAtom);
+    int dyingTimeCounter;
  
     ofxGIF::fiGifLoader gifloader;
     ofVideoGrabber cam;

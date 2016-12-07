@@ -11,8 +11,8 @@ ofAtom::ofAtom(int type, int id, int posX , int posY, int radius){
     m_radius = radius;
     
     if(type != 3){
-    m_velocityX = ofRandom(-7, 7);
-    m_velocityY = ofRandom(-7, 7);
+    m_velocityX = ofRandom(-10, 10);
+    m_velocityY = ofRandom(-10, 10);
    
     if(m_velocityX == 0)
 	m_velocityX = 1;
@@ -69,7 +69,7 @@ void ofAtom::draw(){
     ofFill();
     
     if(m_type == 0)
-        ofSetColor(255,255,0);
+        ofSetColor(255,255,0); // Any Change to the color of Creator should also be reflected in ofApp::Granulate()
     else if(m_type == 1)
         ofSetColor(150,255,0);
     else if(m_type == 2)
