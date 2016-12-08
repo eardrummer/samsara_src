@@ -19,7 +19,7 @@ int n_Atoms = 0;
 void ofApp::setup() {
     cam.setup(1280,720);
     blur.setup(1280,720,5,.2,10);
-   
+
     //targetColor1 is red, targetColor2 is blue, targetColor3 is yellow - Similarly contourFinder1(or 2 or 3), threshold1(or 2 or 3)
     contourFinder1.setMinAreaRadius(10);
     contourFinder1.setMaxAreaRadius(200);
@@ -39,7 +39,7 @@ void ofApp::setup() {
     contourFinder2.setTargetColor(targetColor3, TRACK_COLOR_HSV);
     
     //loading background
-    gifloader.load("images/flashing.gif");
+    gifloader.load("images/Star_bw.gif");
     
     //Atoms code
     //Initializing one Atom of each type
@@ -261,8 +261,11 @@ void ofApp::update() {
         }
         // Virtual Atom Collisions
 	for(int i = 0; i < 3; i ++){
-		if(LifeCreator[j])
-		CAtom[j]->collide(virtualAtom[i]);
+		if(LifeCreator[j]){
+		flag = CAtom[j]->collide(virtualAtom[i]);
+		if(flag == 3 && i == 1)
+			Destroy(CAtom[j]);
+		}
 	}
 
         for(int i = 0; i < n_Creator; i++){
@@ -320,7 +323,7 @@ void ofApp::update() {
     }
 
     // Debugging Display
-/*
+
     for(int j = 0; j < MAXCreator; j++){
 	for(int i = 0; i < MAXPreserver; i++){
 	   cout<<FxMatrix[j][i]<<" ";
@@ -332,7 +335,7 @@ void ofApp::update() {
     for(int i = 0; i < MAXCreator; i++)
     cout<<" "<<LifeCreator[i]<<" ";
     cout<<endl;
-*/
+
 
 
     //OSC code
@@ -382,7 +385,8 @@ void ofApp::draw() {
     
     //For drawing background: the image size is 498*480
     //Comment the next line for viewing the camera input
-    gifloader.pages[indx].draw(391, 120);
+      gifloader.pages[indx].draw(391, 120);
+//    gifloader.pages[indx].draw(195, 60);
     
     ofSetLineWidth(2);
     //contourFinder1.draw();
@@ -505,7 +509,7 @@ void ofApp::Granulate(ofDyingAtom * GranulateAtom){
 	int opacity = 500 - (10 + (scale * 10));
 	
         ofFill();
-        ofSetColor(255,255,0,opacity);
+        ofSetColor(225,255,255,opacity);
 
 
 	ofDrawCircle(GranulateAtom->m_posX, GranulateAtom->m_posY, RADIUS/3 );

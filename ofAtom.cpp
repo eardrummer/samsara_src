@@ -69,11 +69,11 @@ void ofAtom::draw(){
     ofFill();
     
     if(m_type == 0)
-        ofSetColor(255,255,0); // Any Change to the color of Creator should also be reflected in ofApp::Granulate()
+        ofSetColor(225,255,255); // Any Change to the color of Creator should also be reflected in ofApp::Granulate()
     else if(m_type == 1)
-        ofSetColor(150,255,0);
+        ofSetColor(60,250,115);
     else if(m_type == 2)
-        ofSetColor(255,150,0);
+        ofSetColor(255,60,0);
     
     ofDrawCircle(m_posX, m_posY, m_radius);
     
@@ -134,6 +134,9 @@ int ofAtom::collide(ofAtom* nearAtom){
         //    	    cout<<" DESTROY Collision:"<<m_type<<" "<<m_posX<<","<<m_posY<<" "<<nearAtom->m_type<<" "<<nearAtom->m_posX<<","<<nearAtom->m_posY<<endl;  
             return 2;
         }
+	else if (m_type == 0 && nearAtom->m_type == 3){
+ 	    return 3;
+	}
         
     }
     

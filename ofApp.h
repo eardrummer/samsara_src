@@ -13,9 +13,9 @@
 #define HOST "10.80.138.34"
 #define PORT 9455
 
-#define MAXCreator 5
-#define MAXPreserver 5
-#define MAXDestroyer 5
+#define MAXCreator 7
+#define MAXPreserver 3
+#define MAXDestroyer 3
 #define MAXAtoms 12
 #define RADIUS 30
 #define FRAMERATE 30
