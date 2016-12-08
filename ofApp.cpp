@@ -145,7 +145,7 @@ void ofApp::update() {
     //Creating Virtual Atoms at the detected centroids.
     virtualAtom[0]->assign(3,0,centroidmax1.x, centroidmax1.y,0,0, RADIUS); 
     virtualAtom[1]->assign(3,1,centroidmax2.x, centroidmax2.y,0,0, RADIUS);
-    virtualAtom[2]->assign(3,2,centroidmax2.x, centroidmax2.y,0,0, RADIUS);
+    virtualAtom[2]->assign(3,2,centroidmax3.x, centroidmax3.y,0,0, RADIUS);
 
   
     // Blurring for graphics 
