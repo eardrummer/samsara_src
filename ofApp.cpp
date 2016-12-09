@@ -217,6 +217,9 @@ void ofApp::update() {
             isCollidedDestroyer[j][i] = 0;
         }
 
+    for(int i = 0; i < MAXCreator; i++)
+	isCollidedVirtual[i] = 0;
+
     //Initializing FxMatrix every update frame
     for(int i = 0; i < MAXCreator; i++)
         for(int j = 0; j < MAXPreserver; j++)
@@ -267,8 +270,8 @@ void ofApp::update() {
         // Virtual Atom Collisions
 	for(int i = 0; i < 3; i ++){
 		if(LifeCreator[j]){
-		flag = CAtom[j]->collide(virtualAtom[i]);
-		if(flag == 3 && i == 1)
+		isCollidedVirtual[j] = CAtom[j]->collide(virtualAtom[i]);
+		if(isCollidedVirtual[j] == 3 && i == 1)
 			Destroy(CAtom[j]);
 		}
 	}
@@ -342,7 +345,6 @@ void ofApp::update() {
 
     //OSC codes ----------------------------------------------------------------------------------
     
-    // Collisions and Fx
 
     ofxOscMessage M1[MAXCreator],M2[MAXPreserver],M3,M4;
     ofxOscMessage M5[MAXCreator][MAXPreserver], PowerOn;
@@ -356,16 +358,6 @@ void ofApp::update() {
 
     M3.setAddress("/collisionPreserver");
     M4.setAddress("/collisionDestroyer");
-
-    // Assigning Addresses
-    for(int i = 0; i < MAXCreator; i++){
-    	for(int j = 0; j < MAXPreserver; j++)
-		M5[i][j].setAddress("/FxMatrix");
-    }
-    for(int j = 0; j < MAXPreserver; j++){
-	M2[j].setAddress("/lifePreserver");
-    }
-
 
     // OSC for FxMatrix
     std::string msg;
@@ -401,7 +393,7 @@ void ofApp::update() {
         sender.sendMessage(M2[i],false);
     }
     
- 
+    // OSC for Collision Granular
     for(int j = 0; j < n_Creator; j++){
         for(int i = 0; i < n_Preserver; i++){
             if(isCollidedPreserver[j][i] != 0){
@@ -411,12 +403,16 @@ void ofApp::update() {
             }
         }
         for(int i = 0; i < n_Destroyer; i++){
-            
             if(isCollidedDestroyer[j][i] != 0){
                 M4.addIntArg(1);	// Sending a 1 for collision with destruction
                 sender.sendMessage(M4,false);
             }
         }
+	if(isCollidedVirtual[j] != 0){
+		M4.addIntArg(1);    // Sending a 1 for collision with destroying virtual atom
+		sender.sendMessage(M4,false);
+	} 
+	
     } 
 
 }

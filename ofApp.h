@@ -69,6 +69,7 @@ public:
     //Collision Status of each Creator with all other Atoms    
     int isCollidedPreserver[MAXCreator][MAXPreserver];
     int isCollidedDestroyer[MAXCreator][MAXDestroyer];
+    int isCollidedVirtual[MAXCreator];
    
     //Index to identify a Creator
     int indexCreator = 0;
