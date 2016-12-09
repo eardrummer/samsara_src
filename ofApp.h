@@ -88,6 +88,11 @@ public:
     void Granulate(ofDyingAtom * GranulateAtom);
     int dyingTimeCounter;
  
+
+    //osc Message Variables
+    ofxOscMessage M1[MAXCreator],M2[MAXPreserver],M3,M4;
+    ofxOscMessage M5[MAXCreator][MAXPreserver], PowerOn;
+
     ofxGIF::fiGifLoader gifloader;
     ofVideoGrabber cam;
     ofxCv::ContourFinder contourFinder1;
