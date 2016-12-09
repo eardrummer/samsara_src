@@ -76,6 +76,7 @@ void ofApp::setup() {
     
     // Setting Frame Rate for processing
     ofSetFrameRate(FRAMERATE);
+    //timeBeginPeriod(1);   // https://forum.openframeworks.cc/t/emptyexample-running-at-50fps-in-release-mode/13731/7
     
      
     //OSC Code
@@ -308,7 +309,7 @@ void ofApp::update() {
 	for(int i = 0; i < 3; i ++){
 		if(LifeCreator[j]){
 		isCollidedVirtual[j] = CAtom[j]->collide(virtualAtom[i]);
-		if(isCollidedVirtual[j] == 3 && i == 1)
+		if(isCollidedVirtual[j] == 3 && i == 2)
 			Destroy(CAtom[j]);
 		}
 	}
@@ -393,17 +394,20 @@ void ofApp::update() {
 	for(int j = 0; j < MAXPreserver; j++){
 		M5[i][j].addIntArg(FxMatrix[i][j]);
 		sender.sendMessage(M5[i][j],false);
+		M5[i][j].clear();
 	}  
     }	
     // OSC for LifeCreator
     for(int i = 0; i < MAXCreator; i++){
         M1[i].addIntArg(LifeCreator[i]);
         sender.sendMessage(M1[i],false);
+	M1[i].clear();
     }
     // OSC for LifePreserver
     for(int i = 0; i < MAXPreserver; i++){
         M2[i].addIntArg(LifePreserver[i]);
         sender.sendMessage(M2[i],false);
+	M2[i].clear();
     }
     
     // OSC for Collision Granular
@@ -532,6 +536,7 @@ void ofApp::keyPressed(int key){
                 for(int i = 0; i < n_Destroyer; i++){
                         delete [] DAtom[i];
                 }
+		//timeEndPeriod(1);
 		ofExit();
 
     }
