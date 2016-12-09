@@ -345,7 +345,14 @@ void ofApp::update() {
     // Collisions and Fx
 
     ofxOscMessage M1[MAXCreator],M2[MAXPreserver],M3,M4;
-    ofxOscMessage M5[MAXCreator][MAXPreserver];
+    ofxOscMessage M5[MAXCreator][MAXPreserver], PowerOn;
+
+    // First Msg on first frame of code
+    PowerOn.setAddress("/power");
+    if(ofGetFrameNum() == 1){
+    PowerOn.addIntArg(1);
+    sender.sendMessage(PowerOn,false);
+    }
 
     M3.setAddress("/collisionPreserver");
     M4.setAddress("/collisionDestroyer");
