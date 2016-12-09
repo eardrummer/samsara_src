@@ -10,11 +10,11 @@
 #include "ofAtom.h"
 #include "ofDyingAtom.h"
 
-#define HOST "10.80.138.34"
+#define HOST "192.168.1.38"
 #define PORT 9455
 
 #define MAXCreator 7
-#define MAXPreserver 3
+#define MAXPreserver 5
 #define MAXDestroyer 3
 #define MAXAtoms 12
 #define RADIUS 30
@@ -75,6 +75,9 @@ public:
 
     //Life of the Creators -> LifeCreator[i] = 1 (i exists in the system), = 0 (i not in the system)
     int LifeCreator[MAXCreator];
+
+    //Life of the Preservers 
+    int LifePreserver[MAXPreserver];
 
     //Dying State of the Creators -> DyingCreator[i] = 1 (i is currently dying)  
     int DyingCreator[MAXCreator];   

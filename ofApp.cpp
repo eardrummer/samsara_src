@@ -56,6 +56,9 @@ void ofApp::setup() {
     for(int i = 0; i < MAXCreator; i++)
 	LifeCreator[i] = 0;
 
+    //Initializing LifePreserver - status of each Preserver
+    for(int i = 0; i < MAXPreserver; i++)
+	LifePreserver[i] = 0;
 
     //Initializing dying Environment - Status to check if that Creator is currently dying and its pos,vel
     dyingEnvironment = new ofDyingAtom*[MAXCreator];
@@ -152,7 +155,7 @@ void ofApp::update() {
     blur.setScale(0.2);
 
 
-    // Creating Atoms at every BEATRATE seconds
+    // Creating Atoms at every BEATRATE seconds --------------------------------------------------------------
     if((ofGetFrameNum()%(BEATRATE*FRAMERATE)==0))
     {   
 	indexCreator = MAXCreator;   
@@ -183,7 +186,9 @@ void ofApp::update() {
     if(n_Preserver < MAXPreserver && (ofGetFrameNum() > (BEATRATE*FRAMERATE*MAXCreator) && ofGetFrameNum()%(BEATRATE*FRAMERATE) == 0))
     {
         PAtom[n_Preserver] = new ofAtom(1,n_Preserver,centroidmax2.x,centroidmax2.y,RADIUS);
-        
+
+	LifePreserver[n_Preserver] = 1;   
+     
 	if(variableVelocityFlag)
 	PAtom[n_Preserver]->assignVelocity(velocity2.x,velocity2.y);
 	n_Preserver++;
@@ -201,7 +206,7 @@ void ofApp::update() {
     
     
 
-    //Initializing Collision status matrix
+    //Initializing Collision status matrix --------------------------------------------------------------
     for(int j = 0; j < MAXCreator; j++)
         for(int i = 0; i < MAXPreserver; i++){
             isCollidedPreserver[j][i] = 0;
@@ -226,7 +231,7 @@ void ofApp::update() {
         if (indx > gifloader.pages.size()-1) indx = 0;
     }
     
-    //Atoms Code
+    //Atoms Code ------------------------------------------------------------------------------
     for (int i = 0; i < n_Creator; i++){
 	if(LifeCreator[i])
 	CAtom[i]->update();
@@ -238,7 +243,7 @@ void ofApp::update() {
     for (int i = 0; i < n_Destroyer; i++)
         DAtom[i]->update();
     
-    //COLLISION CHECK
+    //COLLISION CHECK --------------------------------------------------------------------------
 
     //Checking for Atoms Collisions
     //Creator
@@ -323,53 +328,96 @@ void ofApp::update() {
     }
 
     // Debugging Display
-
+/*
     for(int j = 0; j < MAXCreator; j++){
 	for(int i = 0; i < MAXPreserver; i++){
 	   cout<<FxMatrix[j][i]<<" ";
 	}
     cout<< endl;
-    }
+   }
+
+
    cout<<" Frame Khatm "<<endl;
+*/
 
-    for(int i = 0; i < MAXCreator; i++)
-    cout<<" "<<LifeCreator[i]<<" ";
-    cout<<endl;
-
-
-
-    //OSC code
+    //OSC codes ----------------------------------------------------------------------------------
     
     // Collisions and Fx
-    ofxOscMessage m1,m2,m3,m4;
-    m1.setAddress("/collisionType");
-    m2.setAddress("/collisionType");
-    m3.setAddress("/FxMatrix"); // TODO: Bundle entire Matrix as OSC msg
+
+    ofxOscMessage M1[MAXCreator],M2[MAXPreserver],M3,M4;
+    ofxOscMessage M5[MAXCreator][MAXPreserver];
+
+    M3.setAddress("/collisionPreserver");
+    M4.setAddress("/collisionDestroyer");
+
+    // Assigning Addresses
+    for(int i = 0; i < MAXCreator; i++){
+	M1[i].setAddress("/lifeCreator");
+    	for(int j = 0; j < MAXPreserver; j++)
+		M5[i][j].setAddress("/FxMatrix");
+    }
+    for(int j = 0; j < MAXPreserver; j++){
+	M2[j].setAddress("/lifePreserver");
+    }
+
+
+    // OSC for FxMatrix
+    std::string msg;
+    for(int i = 0; i < MAXCreator; i++){
+	msg.append("/");
+        msg.append(ofToString(i+1));
+	for(int j = 0; j < MAXPreserver; j++){
+		msg.append("/");
+		msg.append(ofToString(j+1));
+		msg.append("/");
+		msg.append(ofToString(FxMatrix[i][j]));
+		M5[i][j].addStringArg(msg);
+		sender.sendMessage(M5[i][j],false);
+		msg = "";
+		msg.append("/");
+		msg.append(ofToString(i+1));		
+	} 
+	msg="";       
+    }	
+    // OSC for LifeCreator
+    for(int i = 0; i < MAXCreator; i++){
+        msg.append("/");
+	msg.append(ofToString(i+1));
+	msg.append("/");
+	msg.append(ofToString(LifeCreator[i]));
+        M1[i].addStringArg(msg);
+        msg = "";
+        sender.sendMessage(M1[i],false);
+    }
+    // OSC for LifePreserver
+    for(int i = 0; i < MAXPreserver; i++){
+        msg.append("/");
+        msg.append(ofToString(i+1));
+        msg.append("/");
+        msg.append(ofToString(LifePreserver[i]));
+        M2[i].addStringArg(msg);
+        msg = "";
+        sender.sendMessage(M2[i],false);
+    }
     
+ 
     for(int j = 0; j < n_Creator; j++){
         for(int i = 0; i < n_Preserver; i++){
             if(isCollidedPreserver[j][i] != 0){
                 
-                m1.addIntArg(1);	// Sending a 1 for collision with preserver
-                sender.sendMessage(m1,false);
+                M3.addIntArg(1);	// Sending a 1 for collision with preserver
+                sender.sendMessage(M3,false);
             }
         }
-        
         for(int i = 0; i < n_Destroyer; i++){
             
             if(isCollidedDestroyer[j][i] != 0){
-                m2.addIntArg(0);	// Sending a 0 for collision with destruction
-                sender.sendMessage(m2,false);
+                M4.addIntArg(1);	// Sending a 1 for collision with destruction
+                sender.sendMessage(M4,false);
             }
         }
-    }
-    
-    m3.addIntArg(FxMatrix[0][0]);
-    sender.sendMessage(m3,false);
-    
- //   m4.addIntArg(FxMatrix[1][0]);
- //   sender.sendMessage(m4,false);
-    
+    } 
+
 }
 
 void ofApp::draw() {
