@@ -47,10 +47,10 @@ void ofApp::setup() {
     PAtom = new ofAtom*[MAXPreserver];
     DAtom = new ofAtom*[MAXDestroyer];  
 
-    //Initializing FxMatrix (Distances of each Creator from Effects = -1 before the pair exists)
+    //Initializing FxMatrix (Distances of each Creator from Effects = 0 before the pair exists)
     for(int i = 0; i < MAXCreator; i++)
 	for(int j = 0; j < MAXPreserver; j++)
-		FxMatrix[i][j] = -1;
+		FxMatrix[i][j] = 0;
 
     //Initializing LifeCreator - status of each Creator
     for(int i = 0; i < MAXCreator; i++)
@@ -220,7 +220,7 @@ void ofApp::update() {
     //Initializing FxMatrix every update frame
     for(int i = 0; i < MAXCreator; i++)
         for(int j = 0; j < MAXPreserver; j++)
-                FxMatrix[i][j] = -1;
+                FxMatrix[i][j] = 0;
 
 
     
@@ -369,7 +369,8 @@ void ofApp::update() {
 	for(int j = 0; j < MAXPreserver; j++){
 		msg.append("/");
 		msg.append(ofToString(j+1));
-		msg.append("/");
+		//msg.append("/");
+		msg.append(" ");
 		msg.append(ofToString(FxMatrix[i][j]));
 		M5[i][j].addStringArg(msg);
 		sender.sendMessage(M5[i][j],false);
@@ -383,7 +384,8 @@ void ofApp::update() {
     for(int i = 0; i < MAXCreator; i++){
         msg.append("/");
 	msg.append(ofToString(i+1));
-	msg.append("/");
+	//msg.append("/");
+        msg.append(" ");
 	msg.append(ofToString(LifeCreator[i]));
         M1[i].addStringArg(msg);
         msg = "";
@@ -393,7 +395,8 @@ void ofApp::update() {
     for(int i = 0; i < MAXPreserver; i++){
         msg.append("/");
         msg.append(ofToString(i+1));
-        msg.append("/");
+        //msg.append("/");
+	msg.append(" ");
         msg.append(ofToString(LifePreserver[i]));
         M2[i].addStringArg(msg);
         msg = "";
@@ -547,7 +550,7 @@ void ofApp::Destroy(ofAtom* Atom){
 }
 
 void ofApp::Granulate(ofDyingAtom * GranulateAtom){
- //TODO: ADD GRAPHICS TO BE CALLED IN draw() when collision happens
+
     
         int scale = GranulateAtom->m_dyingTimeCounter;
 	int directionX = ofSign(GranulateAtom->m_velocityX);
