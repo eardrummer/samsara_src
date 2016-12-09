@@ -81,7 +81,44 @@ void ofApp::setup() {
     //OSC Code
     // open an outgoing connection to HOST:PORT
     sender.setup(HOST, PORT);
-    
+
+    // Setting OSC Addresses ---------------------------------------------------
+    PowerOn.setAddress("/power");
+    M3.setAddress("/collisionPreserver");
+    M4.setAddress("/collisionDestroyer");
+
+    // FxMatrix
+    std::string msg;
+    for(int i = 0; i < MAXCreator; i++){
+        for(int j = 0; j < MAXPreserver; j++){
+                msg.append("/FxMatrix/");
+                msg.append(ofToString(i+1));
+                msg.append("/");
+                msg.append(ofToString(j+1));
+                M5[i][j].setAddress(msg);
+                msg = "";       
+        }  
+    } 
+
+    // LifeCreator
+    msg = "";
+    for(int i = 0; i < MAXCreator; i++){
+        msg.append("/lifeCreator/");
+        msg.append(ofToString(i+1));
+        M1[i].setAddress(msg);
+        msg = "";
+    }
+
+    // LifePreserver
+    msg = "";
+    for(int i = 0; i < MAXPreserver; i++){
+        msg.append("/lifePreserver/");
+        msg.append(ofToString(i+1));
+        M2[i].setAddress(msg);
+        msg = "";
+    }
+    // -------------------------------------------------------------------------------------
+
     gui.setup();
     gui.add(threshold1.set("Threshold1", 90, 0, 255));
     gui.add(threshold2.set("Threshold2", 50, 0, 255));
@@ -344,51 +381,28 @@ void ofApp::update() {
 */
 
     //OSC codes ----------------------------------------------------------------------------------
-    
-
-    ofxOscMessage M1[MAXCreator],M2[MAXPreserver],M3,M4;
-    ofxOscMessage M5[MAXCreator][MAXPreserver], PowerOn;
 
     // First Msg on first frame of code
-    PowerOn.setAddress("/power");
     if(ofGetFrameNum() == 1){
     PowerOn.addIntArg(1);
     sender.sendMessage(PowerOn,false);
     }
 
-    M3.setAddress("/collisionPreserver");
-    M4.setAddress("/collisionDestroyer");
-
     // OSC for FxMatrix
-    std::string msg;
     for(int i = 0; i < MAXCreator; i++){
 	for(int j = 0; j < MAXPreserver; j++){
-		msg.append("/FxMatrix/");
-		msg.append(ofToString(i+1));
-		msg.append("/");
-		msg.append(ofToString(j+1));
-		M5[i][j].setAddress(msg);
 		M5[i][j].addIntArg(FxMatrix[i][j]);
 		sender.sendMessage(M5[i][j],false);
-		msg = "";	
 	}  
     }	
     // OSC for LifeCreator
     for(int i = 0; i < MAXCreator; i++){
-        msg.append("/lifeCreator/");
-	msg.append(ofToString(i+1));
-	M1[i].setAddress(msg);
         M1[i].addIntArg(LifeCreator[i]);
-        msg = "";
         sender.sendMessage(M1[i],false);
     }
     // OSC for LifePreserver
     for(int i = 0; i < MAXPreserver; i++){
-        msg.append("/lifePreserver/");
-        msg.append(ofToString(i+1));
-        M2[i].setAddress(msg);
         M2[i].addIntArg(LifePreserver[i]);
-        msg = "";
         sender.sendMessage(M2[i],false);
     }
     
