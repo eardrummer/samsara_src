@@ -362,7 +362,6 @@ void ofApp::update() {
     // OSC for FxMatrix
     std::string msg;
     for(int i = 0; i < MAXCreator; i++){
-        msg.append(ofToString(i+1));
 	for(int j = 0; j < MAXPreserver; j++){
 		msg.append("/FxMatrix/");
 		msg.append(ofToString(i+1));
