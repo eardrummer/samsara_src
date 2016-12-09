@@ -359,7 +359,6 @@ void ofApp::update() {
 
     // Assigning Addresses
     for(int i = 0; i < MAXCreator; i++){
-	M1[i].setAddress("/lifeCreator");
     	for(int j = 0; j < MAXPreserver; j++)
 		M5[i][j].setAddress("/FxMatrix");
     }
@@ -371,41 +370,33 @@ void ofApp::update() {
     // OSC for FxMatrix
     std::string msg;
     for(int i = 0; i < MAXCreator; i++){
-	msg.append("/");
         msg.append(ofToString(i+1));
 	for(int j = 0; j < MAXPreserver; j++){
+		msg.append("/FxMatrix/");
+		msg.append(ofToString(i+1));
 		msg.append("/");
 		msg.append(ofToString(j+1));
-		//msg.append("/");
-		msg.append(" ");
-		msg.append(ofToString(FxMatrix[i][j]));
-		M5[i][j].addStringArg(msg);
+		M5[i][j].setAddress(msg);
+		M5[i][j].addIntArg(FxMatrix[i][j]);
 		sender.sendMessage(M5[i][j],false);
-		msg = "";
-		msg.append("/");
-		msg.append(ofToString(i+1));		
-	} 
-	msg="";       
+		msg = "";	
+	}  
     }	
     // OSC for LifeCreator
     for(int i = 0; i < MAXCreator; i++){
-        msg.append("/");
+        msg.append("/lifeCreator/");
 	msg.append(ofToString(i+1));
-	//msg.append("/");
-        msg.append(" ");
-	msg.append(ofToString(LifeCreator[i]));
-        M1[i].addStringArg(msg);
+	M1[i].setAddress(msg);
+        M1[i].addIntArg(LifeCreator[i]);
         msg = "";
         sender.sendMessage(M1[i],false);
     }
     // OSC for LifePreserver
     for(int i = 0; i < MAXPreserver; i++){
-        msg.append("/");
+        msg.append("/lifePreserver/");
         msg.append(ofToString(i+1));
-        //msg.append("/");
-	msg.append(" ");
-        msg.append(ofToString(LifePreserver[i]));
-        M2[i].addStringArg(msg);
+        M2[i].setAddress(msg);
+        M2[i].addIntArg(LifePreserver[i]);
         msg = "";
         sender.sendMessage(M2[i],false);
     }
