@@ -412,6 +412,34 @@ void ofApp::update() {
         }
         
     }
+    //Kill the Last atom
+    flag = 0;
+    if(TheEnd == 1){
+	for(int i = 0; i < MAXCreator; i++)
+	    if(LifeCreator[i])
+	        flag++;
+
+	for(int i = 0; i < MAXPreserver; i++)
+	    if(LifePreserver[i])
+		flag++;
+
+	for(int i = 0; i < MAXDestroyer; i++)
+	    if(LifeDestroyer[i])
+		flag++;
+
+	if(flag == 1){
+	    for(int i = 0; i < MAXCreator; i++)
+		if(LifeCreator[i])
+			Destroy(CAtom[i]);
+	    for(int i = 0; i < MAXPreserver; i++)
+		if(LifePreserver[i])
+			Destroy(PAtom[i]);
+	    for(int i = 0; i < MAXDestroyer; i++)
+		if(LifeDestroyer[i])
+			Destroy(DAtom[i]);
+	
+	}
+    }
     
     
     // EFFECTS MATRIX
@@ -426,7 +454,22 @@ void ofApp::update() {
     
     
     // Debugging Display
-    /*
+    
+     /*
+     for(int i = 0; i < MAXCreator; i++)
+	cout<<LifeCreator[i]<<" ";
+	cout<<"C"<<endl;
+
+     for(int i = 0; i < MAXPreserver; i++)
+	cout<<LifePreserver[i]<<" ";
+	cout<<"P"<<endl;
+
+     for(int i = 0;i < MAXDestroyer; i++)
+	cout<<LifeDestroyer[i]<<" ";
+	cout<<"D"<<endl;
+     */
+     /*
+
      for(int j = 0; j < MAXCreator; j++){
      for(int i = 0; i < MAXPreserver; i++){
      cout<<FxMatrix[j][i]<<" ";
