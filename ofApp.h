@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxCv.h"
 #include "ofxGui.h"
 #include "ofxOsc.h"
 #include "ofxGif.h"
@@ -14,8 +13,8 @@
 #define HOST "192.168.1.38"
 #define PORT 9555
 
-#define USER_CREATOR 1
-#define USER_PRESERVER  0
+#define USER_CREATOR 0
+#define USER_PRESERVER  1
 #define USER_DESTROYER 0
 
 #define MAXCreator 15
@@ -37,24 +36,6 @@ public:
     void keyPressed(int key);
     
     ofxBlur blur;
-    
-    double max1;
-    int indx1;
-    ofVec2f centroidmax1;
-    int n1;
-    ofVec2f velocity1;
-    
-    double max2;
-    int indx2;
-    ofVec2f centroidmax2;
-    int n2;
-    ofVec2f velocity2;
-    
-    double max3;
-    int indx3;
-    ofVec2f centroidmax3;
-    int n3;
-    ofVec2f velocity3;
     
     //Atom Code
     // Initializing the Different atoms dynamically
@@ -107,16 +88,6 @@ public:
     
     ofxGIF::fiGifLoader gifloader;
     ofxGIF::fiGifLoader gifloader2;
-    ofVideoGrabber cam;
-    ofxCv::ContourFinder contourFinder1;
-    ofColor targetColor1;
-    ofColor targetColor2;
-    ofxCv::ContourFinder contourFinder2;
-    ofColor targetColor3;
-    ofxCv::ContourFinder contourFinder3;
-    cv::Point2f center1;
-    cv::Point2f center2;
-    cv::Point2f center3;
     
     ofxPanel gui;
     ofParameter<float> threshold1;
@@ -129,16 +100,16 @@ public:
     ofxOscSender sender;
     ofBuffer imgAsBuffer;
     ofImage img;
-
-    //TCP Handling 
+    
+    //TCP Handling
     ofxTCPServer TCP;
     vector <string> storeText;
     uint64_t lastSent;
-
+    
     ofxTCPClient tcpClient;
     string msgTx,msgRx;
     float counter;
     int connectTime;
     int deltaTime;
-
+    
 };
