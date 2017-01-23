@@ -1,6 +1,7 @@
 
 #include "ofApp.h"
 #include <iostream>
+#include <sstream>
 
 using namespace ofxCv;
 using namespace cv;
@@ -19,6 +20,20 @@ int startOfEnd = 0;
 
 
 void ofApp::setup() {
+
+    //TCP:
+    TCP.setup(11997);
+    TCP.setMessageDelimiter("\n");
+    lastSent = 0;
+
+    msgTx = "";
+    msgRx = "";
+
+    tcpClient.setup("192.168.1.36", 11999);
+    tcpClient.setMessageDelimiter("\n");	
+    connectTime = 0;
+    deltaTime = 0;
+
     cam.setup(1280,720);
     blur.setup(1280,720,5,.2,10);
     
@@ -139,6 +154,20 @@ void ofApp::setup() {
 }
 
 void ofApp::update() {
+
+    //waiting for connection from the server
+    if(!tcpClient.isConnected()){
+
+        msgTx = "";
+
+        // if we are not connected lets try and reconnect every 5 seconds
+        deltaTime = ofGetElapsedTimeMillis() - connectTime;
+
+        if( deltaTime > 1000 ){
+            tcpClient.setup("192.168.1.36", 11999);
+            connectTime = ofGetElapsedTimeMillis();
+        }
+    }
     
     cam.update();
     if(cam.isFrameNew()) {
@@ -205,7 +234,241 @@ void ofApp::update() {
     blur.setScale(0.2);
     
     
-    // Creating Atoms at every BEATRATE seconds --------------------------------------------------------------
+    // Making all the Atoms --------------------------------------------------------------------------------------
+
+	
+    #if USER_CREATOR
+	
+	for(unsigned int i = 0; i < (unsigned int)TCP.getLastID(); i++){
+
+                if( !TCP.isClientConnected(i) )continue;
+			                // get the ip and port of the client
+                string port = ofToString( TCP.getClientPort(i) );
+                string ip   = TCP.getClientIP(i);
+                string info = "client "+ofToString(i)+" -connected from "+ip+" on port: "+port;
+
+                if(i >= storeText.size() ){
+                        storeText.push_back( string() );
+                }
+
+		string tmp, str;	
+        	do{
+            		str = tmp;
+            		tmp = TCP.receive(i);
+                }while(tmp!="");
+
+                // if there was a message set it to the corresponding client
+                if(str.length() > 0){
+                        storeText[i] = str;
+                }
+		else{
+			storeText[i] = "";
+		}	
+
+	    	//cout<<info<<endl;
+	    	//cout<<storeText[i]<< "<< THIS IS THE MSG"<<endl;	
+
+		stringstream ss(storeText[i]);
+		vector<int> vect;
+		int token;
+		while ( ss >> token) {
+			vect.push_back(token);			
+		}	
+
+		int type,id, posX, posY, velX, velY;
+		
+			
+		// vect is an array received from TCP of the format (type,id,X,Y)
+		if(vect.size() > 0){
+		
+			type = vect[0];	
+			id = vect[1];	 	
+			posX = vect[2];
+			posY = vect[3];
+			velX = vect[4];
+			velY = vect[5];
+		       	
+			//cout<<type<<" "<<id<<" "<<endl;
+
+			if(type == 1) {
+			
+			    PAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
+            		    PAtom[id]->assignVelocity(velX,velY);
+            
+            		    LifePreserver[id] = 1;
+		            n_Preserver++;
+	  
+			}
+
+			if(type == 2) {
+                                                 
+                            DAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
+                            DAtom[id]->assignVelocity(velX,velY);
+ 
+                            LifeDestroyer[id] = 1;
+			    n_Destroyer++;
+
+                        }
+
+		}
+ 
+	}
+
+    #elif USER_PRESERVER
+
+	for(unsigned int i = 0; i < (unsigned int)TCP.getLastID(); i++){
+
+                if( !TCP.isClientConnected(i) )continue;
+			                // get the ip and port of the client
+                string port = ofToString( TCP.getClientPort(i) );
+                string ip   = TCP.getClientIP(i);
+                string info = "client "+ofToString(i)+" -connected from "+ip+" on port: "+port;
+
+                if(i >= storeText.size() ){
+                        storeText.push_back( string() );
+                }
+
+		string tmp, str;	
+        	do{
+            		str = tmp;
+            		tmp = TCP.receive(i);
+                }while(tmp!="");
+
+                // if there was a message set it to the corresponding client
+                if(str.length() > 0){
+                        storeText[i] = str;
+                }
+		else{
+			storeText[i] = "";
+		}	
+
+	    	//cout<<info<<endl;
+	    	//cout<<storeText[i]<< "<< THIS IS THE MSG"<<endl;	
+
+		stringstream ss(storeText[i]);
+		vector<int> vect;
+		int token;
+		while ( ss >> token) {
+			vect.push_back(token);			
+		}	
+
+		int type, id, posX, posY, velX, velY;
+		
+		// vect is an array received from TCP of the format (type,id,X,Y)
+		if(vect.size() > 0){
+			
+			type = vect[0];
+			id = vect[1];	 	
+			posX = vect[2];
+			posY = vect[3];
+			velX = vect[4];
+			velY = vect[5];
+
+			if(type == 0) {
+			
+			    CAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
+                            CAtom[id]->assignVelocity(velX,velY);
+            
+            		    LifeCreator[id] = 1;
+			    n_Creator++;
+	  
+			}
+
+			if(type == 2) {
+                                                 
+                            DAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
+                            DAtom[id]->assignVelocity(velX,velY);
+
+
+                            LifeDestroyer[id] = 1;
+			    n_Destroyer++;
+
+                        }
+
+		}
+ 
+	}
+
+
+
+    #elif USER_DESTROYER
+	for(unsigned int i = 0; i < (unsigned int)TCP.getLastID(); i++){
+
+                if( !TCP.isClientConnected(i) )continue;
+			                // get the ip and port of the client
+                string port = ofToString( TCP.getClientPort(i) );
+                string ip   = TCP.getClientIP(i);
+                string info = "client "+ofToString(i)+" -connected from "+ip+" on port: "+port;
+
+                if(i >= storeText.size() ){
+                        storeText.push_back( string() );
+                }
+
+		string tmp, str;	
+        	do{
+            		str = tmp;
+            		tmp = TCP.receive(i);
+                }while(tmp!="");
+
+                // if there was a message set it to the corresponding client
+                if(str.length() > 0){
+                        storeText[i] = str;
+                }
+		else{
+			storeText[i] = "";
+		}	
+
+	    	//cout<<info<<endl;
+	    	//cout<<storeText[i]<< "<< THIS IS THE MSG"<<endl;	
+
+		stringstream ss(storeText[i]);
+		vector<int> vect;
+		int token;
+		while ( ss >> token) {
+			vect.push_back(token);			
+		}	
+
+		int type, id, posX, posY, velX, velY;
+		
+		// vect is an array received from TCP of the format (type,id,X,Y)
+		if(vect.size() > 0){
+			
+			type = vect[0];
+			id = vect[1];	 	
+			posX = vect[2];
+			posY = vect[3];
+			velX = vect[4];
+			velY = vect[5];			
+
+
+			if(type == 0) {
+			
+			    CAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
+                            CAtom[id]->assignVelocity(velX,velY);
+            
+            		    LifeCreator[id] = 1;
+	  		    n_Creator++;
+			}
+
+			if(vect[0] == 1) {
+                                                 
+                            PAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
+                            PAtom[id]->assignVelocity(velX,velY);
+
+                            LifePreserver[id] = 1;
+			    n_Preserver++;
+                        }
+
+		}
+ 
+	}
+
+
+    #endif
+
+/*
+    
+
     if((ofGetFrameNum()%(BEATRATE*FRAMERATE)==0) && TheEnd == 0 )
     {
         indexCreator = MAXCreator;
@@ -256,7 +519,7 @@ void ofApp::update() {
         n_Destroyer++;
     }
     
-    
+  */  
     
     //Initializing Collision status matrix --------------------------------------------------------------
     for(int j = 0; j < MAXCreator; j++)
@@ -558,10 +821,11 @@ void ofApp::draw() {
         ofNoFill();
     
     //Code to flip everything laterally, write all the drawing code between this and ofPopMatrix()
+    /*
     ofPushMatrix(); // save the old coordinate system
     ofTranslate( ofGetWidth(), 0.0f); // move the origin to the bottom-left hand corner of the window
     ofScale(-1.0f, 1.0f); // flip the x axis horizontally
-    
+    */
     
     ofSetColor(cyanPrint);
     //minAreaRect1.draw();
@@ -625,7 +889,7 @@ void ofApp::draw() {
         }
     }
     
-    ofPopMatrix(); // restore the previous coordinate system
+    //ofPopMatrix(); // restore the previous coordinate system
     
     blur.end();
     blur.draw();
@@ -634,7 +898,102 @@ void ofApp::draw() {
 }
 
 void ofApp::mousePressed(int x, int y, int button) {
-    //targetColor = cam.getPixels().getColor(x, y);
+
+	// CREATING ON MOUSE PRESS-------------------------------------------------------------------------------
+	
+	#if USER_CREATOR
+        
+	indexCreator = MAXCreator;
+        for(int i = 0; i < MAXCreator; i++){
+            if(LifeCreator[i] == 0){
+                indexCreator = i;    // First Available Creator ID
+                break;
+            }
+        }
+
+        //Checking if there is space in the environment for creating a Creator Atom
+        if( indexCreator < MAXCreator){
+
+            CAtom[indexCreator] = new ofAtom(0,indexCreator,x,y,RADIUS);
+
+          //  if(variableVelocityFlag)
+          //      CAtom[indexCreator]->assignVelocity(velocity1.x,velocity1.y);
+
+            LifeCreator[indexCreator] = 1;
+
+	    int velX, velY;
+	    velX = CAtom[indexCreator]->m_velocityX;
+	    velY = CAtom[indexCreator]->m_velocityY;
+
+		// TCP: 
+            if(tcpClient.isConnected()){
+       
+			msgTx = "0 " + ofToString(indexCreator) + " " + ofToString(x) + " " + ofToString(y) + " "+ofToString(velX) + " " + ofToString(velY) + " ";
+			tcpClient.send(msgTx);
+			msgTx = "";
+        	}
+            // Update n_Creator if it hasnt reached MAX even once.
+            if(n_Creator < MAXCreator)
+                n_Creator++;
+
+	}
+
+	#elif USER_PRESERVER
+
+	if ( n_Preserver < MAXPreserver) {
+		PAtom[n_Preserver] = new ofAtom(1,n_Preserver, x, y,RADIUS);
+
+        	LifePreserver[n_Preserver] = 1;
+
+        	//if(variableVelocityFlag)
+            	//	PAtom[n_Preserver]->assignVelocity(velocity2.x,velocity2.y);
+
+	         int velX, velY;
+        	 velX = PAtom[n_Preserver]->m_velocityX;
+           	 velY = PAtom[n_Preserver]->m_velocityY;
+		
+		//TCP:
+        	if(tcpClient.isConnected()){
+
+                	msgTx = "1 " + ofToString(n_Preserver) + " " + ofToString(x) + " " + ofToString(y) + " " + ofToString(velX) + " " + ofToString(velY) + " ";
+                	tcpClient.send(msgTx);
+			msgTx = "";
+        	}
+
+               n_Preserver++;
+	}	
+
+
+
+	
+	#elif USER_DESTROYER
+	if ( n_Destroyer < MAXDestroyer) {
+		DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer, x, y,RADIUS);
+
+        	LifeDestroyer[n_Destroyer] = 1;
+
+        	//if(variableVelocityFlag)
+            	//	DAtom[n_Destroyer]->assignVelocity(velocity3.x,velocity3.y);
+		
+	        int velX, velY;
+	        velX = DAtom[n_Destroyer]->m_velocityX;
+	        velY = DAtom[n_Destroyer]->m_velocityY;
+
+
+		//TCP:
+        	if(tcpClient.isConnected()){
+
+                	msgTx = "2 " + ofToString(n_Destroyer) + " " + ofToString(x) + " " + ofToString(y) + " " + ofToString(velX) + " " + ofToString(velY) + " ";
+                	tcpClient.send(msgTx);
+			msgTx = "";
+        	}
+                n_Destroyer++;
+
+	}
+
+	#endif
+
+
 }
 
 

@@ -6,19 +6,24 @@
 #include "ofxOsc.h"
 #include "ofxGif.h"
 #include "ofxBlur.h"
+#include "ofxNetwork.h"
 
 #include "ofAtom.h"
 #include "ofDyingAtom.h"
 
-#define HOST "192.168.43.143"
+#define HOST "192.168.1.38"
 #define PORT 9555
 
-#define MAXCreator 7
+#define USER_CREATOR 1
+#define USER_PRESERVER  0
+#define USER_DESTROYER 0
+
+#define MAXCreator 15
 #define MAXPreserver 5
 #define MAXDestroyer 3
 #define MAXAtoms MAXCreator + MAXPreserver + MAXDestroyer
 #define RADIUS 30
-#define FRAMERATE 40
+#define FRAMERATE 30
 #define BEATRATE 2
 #define DYINGTIME 3
 
@@ -124,4 +129,16 @@ public:
     ofxOscSender sender;
     ofBuffer imgAsBuffer;
     ofImage img;
+
+    //TCP Handling 
+    ofxTCPServer TCP;
+    vector <string> storeText;
+    uint64_t lastSent;
+
+    ofxTCPClient tcpClient;
+    string msgTx,msgRx;
+    float counter;
+    int connectTime;
+    int deltaTime;
+
 };
