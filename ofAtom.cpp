@@ -74,7 +74,34 @@ void ofAtom::draw(){
         ofSetColor(60,250,115);
     else if(m_type == 2)
         ofSetColor(255,60,0);
-    
+    else if(m_type == 3 && m_id == 0)
+	ofSetColor(255,0,0);
+	//ofSetColor(cyanPrint);
+    else if(m_type == 3 && m_id == 1)
+	 ofSetColor(255,0,0);
+	//ofSetColor(yellowPrint);
+    else if(m_type == 3 && m_id == 2)
+	//ofSetColor(magentaPrint);
+	 ofSetColor(255,0,0);
+    else if(m_type == 4)
+	ofSetColor(50,240,105);
+	//Insert Color for Frozen Creator
+    else if(m_type == 5)
+	 ofSetColor(255,0,0);
+	//Insert Color for Frozen Preserver
+    else if(m_type == 6)
+	 ofSetColor(255,0,0);
+	//Insert Color for Frozen Invisible Creator
+    else if(m_type == 7 && m_id == 0)
+	ofSetColor(255,100,0);
+        //Insert Color for Frozen Invisible Preserver
+/*    else if(m_type == 7 && m_id == 1)
+        ofSetColor(255,0,0);
+        //Insert Color for Frozen Invisible Destroyer
+    else if(m_type == 7 && m_id == 2)
+        ofSetColor(255,0,0);
+*/
+
     ofDrawCircle(m_posX, m_posY, m_radius);
     
 }

@@ -17,7 +17,7 @@ public:
     //Destructor TODO:
     
     //variables
-    int m_type; // Type of atom. 0 - Constuctor, 1 - Preserver/Fx, 2 - Destroyer, 3 - Virtual
+    int m_type; // Type of atom. 0 - Constuctor, 1 - Preserver/Fx, 2 - Destroyer, 3 - Virtual, (4,5,6) - Frozen C, P and D
     int m_id;
     int m_velocityX;
     int m_velocityY;

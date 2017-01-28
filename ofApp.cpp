@@ -1,7 +1,9 @@
+
 #include "ofApp.h"
 #include <iostream>
-#include <sstream>
 
+using namespace ofxCv;
+using namespace cv;
 using namespace std;
 
 // 1 to Enable velocity control in Image processing
@@ -17,21 +19,26 @@ int startOfEnd = 0;
 
 
 void ofApp::setup() {
-    
-    //TCP:
-    TCP.setup(11999);
-    TCP.setMessageDelimiter("\n");
-    lastSent = 0;
-    
-    msgTx = "";
-    msgRx = "";
-    
-    tcpClient.setup("192.168.1.43", 11997);
-    tcpClient.setMessageDelimiter("\n");
-    connectTime = 0;
-    deltaTime = 0;
-    
+    cam.setup(1280,720);
     blur.setup(1280,720,5,.2,10);
+    
+    //targetColor1 is red, targetColor2 is blue, targetColor3 is yellow - Similarly contourFinder1(or 2 or 3), threshold1(or 2 or 3)
+    contourFinder1.setMinAreaRadius(10);
+    contourFinder1.setMaxAreaRadius(200);
+    
+    contourFinder2.setMinAreaRadius(10);
+    contourFinder2.setMaxAreaRadius(200);
+    
+    contourFinder3.setMinAreaRadius(10);
+    contourFinder3.setMaxAreaRadius(200);
+    
+    targetColor1.set(0,0,255);
+    targetColor2.set(200,250,0);
+    targetColor3.set(255,0,0);
+    
+    contourFinder1.setTargetColor(targetColor1, TRACK_COLOR_HS);
+    contourFinder2.setTargetColor(targetColor2, TRACK_COLOR_RGB);
+    contourFinder2.setTargetColor(targetColor3, TRACK_COLOR_HSV);
     
     //loading background
     gifloader.load("images/Star_bw.gif");
@@ -42,6 +49,11 @@ void ofApp::setup() {
     CAtom = new ofAtom*[MAXCreator];
     PAtom = new ofAtom*[MAXPreserver];
     DAtom = new ofAtom*[MAXDestroyer];
+
+    //Freeze Code
+    CAtomFreeze = new ofAtom*[MAXCreator];
+    PAtomFreeze = new ofAtom*[MAXPreserver];
+    DAtomFreeze = new ofAtom*[MAXDestroyer];
     
     //Initializing FxMatrix (Distances of each Creator from Effects = 0 before the pair exists)
     for(int i = 0; i < MAXCreator; i++)
@@ -49,17 +61,20 @@ void ofApp::setup() {
             FxMatrix[i][j] = 0;
     
     //Initializing LifeCreator - status of each Creator
-    for(int i = 0; i < MAXCreator; i++)
+    for(int i = 0; i < MAXCreator; i++){
         LifeCreator[i] = 0;
-    
+	LifeCreatorFreeze[i] = 0;
+    }
     //Initializing LifePreserver - status of each Preserver
-    for(int i = 0; i < MAXPreserver; i++)
+    for(int i = 0; i < MAXPreserver; i++){
         LifePreserver[i] = 0;
-    
+	LifePreserverFreeze[i] = 0;
+    }
     //Initializing LifeDestroyer - status
-    for(int i = 0; i < MAXDestroyer; i++)
+    for(int i = 0; i < MAXDestroyer; i++){
         LifeDestroyer[i] = 0;
-    
+	LifeDestroyerFreeze[i] = 0;
+    }
     //Initializing dying Environment - Status to check if that Creator is currently dying and its pos,vel
     dyingEnvironment = new ofDyingAtom*[MAXCreator];
     dyingEnd = new ofDyingAtom*[MAXAtoms];
@@ -74,10 +89,15 @@ void ofApp::setup() {
     TheEnd = 0;
     //Initializing 3 virtual atoms for image processing
     virtualAtom = new ofAtom*[3];
-    virtualAtom[0] = new ofAtom(3, 0, 0, 0 , RADIUS);
-    virtualAtom[1] = new ofAtom(3, 1, 0, 0 , RADIUS);
-    virtualAtom[2] = new ofAtom(3, 2, 0, 0 , RADIUS);
-    
+    virtualAtom[0] = new ofAtom(3, 0, 0, 0 , RADIUS/2);
+    virtualAtom[1] = new ofAtom(3, 1, 0, 0 , RADIUS/2);
+    virtualAtom[2] = new ofAtom(3, 2, 0, 0 , RADIUS/2);
+
+    virtualAtomInvisible = new ofAtom*[3];
+    virtualAtomInvisible[0] = new ofAtom(7, 0, 0, 0 , RADIUS/2);
+    virtualAtomInvisible[1] = new ofAtom(7, 1, 0, 0 , RADIUS/2);
+    virtualAtomInvisible[2] = new ofAtom(7, 2, 0, 0 , RADIUS/2);
+
     
     // Setting Frame Rate for processing
     ofSetFrameRate(FRAMERATE);
@@ -85,6 +105,15 @@ void ofApp::setup() {
     
     
     //OSC Code
+    
+    // OSC Receiving -------------------------
+    C_receiver.setup(CPORT);
+    P_receiver.setup(PPORT);
+    D_receiver.setup(DPORT);
+    /*
+    // PD -----------------------------------------------------------------------------------------
+
+
     // open an outgoing connection to HOST:PORT
     sender.setup(HOST, PORT);
     
@@ -123,263 +152,561 @@ void ofApp::setup() {
         M2[i].setAddress(msg);
         msg = "";
     }
+    */
     // -------------------------------------------------------------------------------------
     
     gui.setup();
+    gui.add(threshold1.set("Threshold1", 50, 0, 255));
+    gui.add(threshold2.set("Threshold2", 90, 0, 255));
+    gui.add(threshold3.set("Threshold3", 100, 0, 255));
 }
 
 void ofApp::update() {
     
-    //waiting for connection from the server
-    if(!tcpClient.isConnected()){
+    cam.update();
+    if(cam.isFrameNew()) {
+        contourFinder1.setTargetColor(targetColor1,TRACK_COLOR_HS);
+        contourFinder1.setThreshold(threshold1);
+        contourFinder1.findContours(cam);
         
-        msgTx = "";
+        contourFinder2.setTargetColor(targetColor2,TRACK_COLOR_RGB);
+        contourFinder2.setThreshold(threshold2);
+        contourFinder2.findContours(cam);
         
-        // if we are not connected lets try and reconnect every 5 seconds
-        deltaTime = ofGetElapsedTimeMillis() - connectTime;
-        
-        if( deltaTime > 1000 ){
-            tcpClient.setup("192.168.1.43", 11997);
-            connectTime = ofGetElapsedTimeMillis();
+        contourFinder3.setTargetColor(targetColor3,TRACK_COLOR_HSV);
+        contourFinder3.setThreshold(threshold3);
+        contourFinder3.findContours(cam);
+    }
+    
+    //Finding and drawing the center of the contour for targetcolor1
+    n1 = contourFinder1.size();
+    max1 = 0.0;
+    for(int i = 0; i < n1; i++) {
+        double area1 = contourFinder1.getContourArea(i);
+        if(area1 > max1 ){
+            max1 = area1;
+            indx1 = i;
+            centroidmax1 = toOf(contourFinder1.getCenter(i));
+            velocity1 = toOf(contourFinder1.getVelocity(i));
         }
     }
+    
+    //Finding and drawing the center of the contour for targetcolor2
+    n2 = contourFinder2.size();
+    max2 = 0.0;
+    for(int i = 0; i < n2; i++) {
+        double area2 = contourFinder2.getContourArea(i);
+        if(area2 > max2 ){
+            max2 = area2;
+            indx2 = i;
+            centroidmax2 = toOf(contourFinder2.getCenter(i));
+            velocity2 = toOf(contourFinder2.getVelocity(i));
+        }
+    }
+    
+    //Finding and drawing the center of the contour for targetcolor3
+    n3 = contourFinder3.size();
+    max3 = 0.0;
+    for(int i = 0; i < n3; i++) {
+        double area3 = contourFinder3.getContourArea(i);
+        if(area3 > max3 ){
+            max3 = area3;
+            indx3 = i;
+            centroidmax3 = toOf(contourFinder3.getCenter(i));
+            velocity3 = toOf(contourFinder3.getVelocity(i));
+        }
+    }
+    
+    
+    //Creating Virtual Atoms at the detected centroids.
+    //virtualAtom[0]->assign(3,0,centroidmax1.x, centroidmax1.y,0,0, RADIUS/2);
+    //virtualAtom[1]->assign(3,1,centroidmax2.x, centroidmax2.y,0,0, RADIUS/2);
+    //virtualAtom[2]->assign(3,2,centroidmax3.x, centroidmax3.y,0,0, RADIUS/2);
     
     
     // Blurring for graphics
     blur.setScale(0.2);
     
+    // NEW OSC CONTROLLED CODE   ------------------------------------------------------------------------
+
+    // Assign these values from OSC
+    //  C_OSCPosX, C_OSCPosY;   C_isFreeze, C_isInstance, C_isInteract
+    //  P_OSCPosX, P_OSCPosY;   P_isFreeze, P_isInstance, P_isInteract
+    //  D_OSCPosX, D_OSCPosY;   D_isFreeze, D_isInstance, D_isInteract     
     
-    // Making all the Atoms --------------------------------------------------------------------------------------
+
+    while(C_receiver.hasWaitingMessages()){
+	
+	C_receiver.getNextMessage(C_OSC);
+	
+    	if(C_OSC.getAddress() == "/freeze"){
+		C_isFreeze = C_OSC.getArgAsInt32(0);
+    	}
+    	if(C_OSC.getAddress() == "/push1"){
+    		C_isInstance = C_OSC.getArgAsInt32(0);
+    	}
+    	if(C_OSC.getAddress() == "/push2"){
+		C_isInteract = C_OSC.getArgAsInt32(0);
+    	}
+    	if(C_OSC.getAddress() == "/xyPad"){
+		C_OSCPosX = 1280 * C_OSC.getArgAsFloat(0);
+        	C_OSCPosY = 720 * C_OSC.getArgAsFloat(1);
+    	}
     
-    
-#if USER_CREATOR
-    
-    for(unsigned int i = 0; i < (unsigned int)TCP.getLastID(); i++){
-        
-        if( !TCP.isClientConnected(i) )continue;
-        // get the ip and port of the client
-        string port = ofToString( TCP.getClientPort(i) );
-        string ip   = TCP.getClientIP(i);
-        string info = "client "+ofToString(i)+" -connected from "+ip+" on port: "+port;
-        
-        if(i >= storeText.size() ){
-            storeText.push_back( string() );
-        }
-        
-        string tmp, str;
-        do{
-            str = tmp;
-            tmp = TCP.receive(i);
-        }while(tmp!="");
-        
-        // if there was a message set it to the corresponding client
-        if(str.length() > 0){
-            storeText[i] = str;
-        }
-        else{
-            storeText[i] = "";
-        }
-        
-        //cout<<info<<endl;
-        //cout<<storeText[i]<< "<< THIS IS THE MSG"<<endl;
-        
-        stringstream ss(storeText[i]);
-        vector<int> vect;
-        int token;
-        while ( ss >> token) {
-            vect.push_back(token);
-        }
-        
-        int type,id, posX, posY, velX, velY;
-        
-        
-        // vect is an array received from TCP of the format (type,id,X,Y)
-        if(vect.size() > 0){
-            
-            type = vect[0];
-            id = vect[1];
-            posX = vect[2];
-            posY = vect[3];
-            velX = vect[4];
-            velY = vect[5];
-            
-            //cout<<type<<" "<<id<<" "<<endl;
-            
-            if(type == 1) {
-                
-                PAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
-                PAtom[id]->assignVelocity(velX,velY);
-                
-                LifePreserver[id] = 1;
-                n_Preserver++;
-                
-            }
-            
-            if(type == 2) {
-                
-                DAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
-                DAtom[id]->assignVelocity(velX,velY);
-                
-                LifeDestroyer[id] = 1;
-                n_Destroyer++;
-                
-            }
-            
-        }
-        
+
+    // Check for Creator Freeze OSC Msg
+    // Not in freeze mode
+    if(C_isFreeze == 0 || C_isFreeze == 2) {
+
+	//Displaying Cursor Position as virtualAtomInvisible
+	virtualAtomInvisible[0]->assign(7, 0 , C_OSCPosX , C_OSCPosY , 0, 0, RADIUS/2);
+	
+	for(int i = 0; i < MAXCreator; i++){
+	
+		//Copying all Frozen Atoms to UnFreeze State
+		if(LifeCreatorFreeze[i] == 1){
+			
+			CAtom[i] = new ofAtom(0,i, CAtomFreeze[i]->m_posX, CAtomFreeze[i]->m_posY , RADIUS);
+			LifeCreator[i] = 1;	
+			LifeCreatorFreeze[i] = 0;
+			delete [] CAtomFreeze[i];
+				
+		}
+	}
+
+	//Creating Atom
+	if(C_isInstance == 1 && C_flagInstance == 0){
+		C_flagInstance = 1;
+		indexCreator = MAXCreator;
+		for(int i = 0; i < MAXCreator; i++){
+			if(LifeCreator[i] == 0){
+				indexCreator = i;
+				break;
+			}
+		}
+	
+		if(indexCreator < MAXCreator){
+			CAtom[indexCreator] = new ofAtom(0,indexCreator, C_OSCPosX, C_OSCPosY , RADIUS);
+			LifeCreator[indexCreator] = 1;
+			n_Creator++;
+		}
+	}
+	else if(C_isInstance == 0 && C_flagInstance == 1)
+		C_flagInstance = 0;
+
+
+	//Allowing Interaction (Bhasad)
+	//Bhasad on
+	if(C_isInteract == 1){
+		virtualAtom[0]->assign(3, 0 , C_OSCPosX , C_OSCPosY , 0, 0, RADIUS/2);
+		virtualAtomInvisible[0]->assign(7, 0, 0, 0, 0, 0, RADIUS/2);
+			
+	}
+
+	//Bhasad Off
+	else if(C_isInteract == 0){
+		virtualAtom[0]->assign(3, 0 , 0 , 0 , 0, 0, RADIUS/2);
+		virtualAtomInvisible[0]->assign(7, 0 , C_OSCPosX , C_OSCPosY , 0, 0, RADIUS/2);
+		
+	}
+    }	
+
+
+    // Freeze Mode
+    else if(C_isFreeze == 1){
+
+	// Freezing all Atoms and copying them into freeze state
+	for(int i = 0; i < MAXCreator; i++){
+		
+		if(LifeCreator[i] == 1){
+			
+			LifeCreator[i] = 0;
+			LifeCreatorFreeze[i] = 1;	
+		
+			CAtomFreeze[i] = new ofAtom(4, i, CAtom[i]->m_posX, CAtom[i]->m_posY, RADIUS);
+			delete [] CAtom[i];	
+		}
+	}
+	
+	// Deleting an atom
+	if(C_isInstance == 1 && C_flagInstance == 0){
+
+		C_flagInstance = 1;
+
+		// Returns index of nearest atom of same type, and -1 if none are near.
+		indexCreator = nearestAtom( 0, C_OSCPosX, C_OSCPosY);
+		if(indexCreator != -1){
+
+			LifeCreatorFreeze[indexCreator] = 0;
+			delete [] CAtomFreeze[indexCreator];	
+		}	
+	}
+	else if(C_isInstance == 0 && C_flagInstance == 1){
+		C_flagInstance = 0;
+	}
+
+
+	// Allow Moving the Atom
+	if(C_isInteract == 1){
+
+                virtualAtom[0]->assign(3, 0 , C_OSCPosX , C_OSCPosY , 0, 0, RADIUS/2);
+                virtualAtomInvisible[0]->assign(7, 0, 0, 0, 0, 0, RADIUS/2);
+
+		indexCreator = nearestAtom( 0, virtualAtom[0]->m_posX, virtualAtom[0]->m_posY);
+		if(indexCreator != -1){
+			
+			CAtomFreeze[indexCreator]->assign(4, indexCreator, C_OSCPosX, C_OSCPosY, 0, 0, RADIUS);
+
+		}
+		
+	}
+	else if(C_isInteract == 0){
+
+                virtualAtom[0]->assign(3, 0 , 0 , 0 , 0, 0, RADIUS/2);
+                virtualAtomInvisible[0]->assign(7, 0 , C_OSCPosX , C_OSCPosY , 0, 0, RADIUS/2);
+	
+	}
+
     }
+
+
+    } // END OF WAITING FOR OSC --------------------------------------------------------------
+
+    while(P_receiver.hasWaitingMessages()){
+	
+	P_receiver.getNextMessage(P_OSC);
+	
+    	if(P_OSC.getAddress() == "/freeze"){
+		P_isFreeze = P_OSC.getArgAsInt32(0);
+    	}
+    	if(P_OSC.getAddress() == "/push1"){
+    		P_isInstance = P_OSC.getArgAsInt32(0);
+    	}
+    	if(P_OSC.getAddress() == "/push2"){
+		P_isInteract = P_OSC.getArgAsInt32(0);
+    	}
+    	if(P_OSC.getAddress() == "/xyPad"){
+		P_OSCPosX = 1280 * P_OSC.getArgAsFloat(0);
+        	P_OSCPosY = 720 * P_OSC.getArgAsFloat(1);
+    	}
     
-#elif USER_PRESERVER
+
+    // Check for Creator Freeze OSC Msg
+    // Not in freeze mode
+    if(P_isFreeze == 0 || P_isFreeze == 2) {
+
+	//Displaying Cursor Position as virtualAtomInvisible
+	virtualAtomInvisible[1]->assign(7, 1 , P_OSCPosX , P_OSCPosY , 0, 0, RADIUS/2);
+	
+	for(int i = 0; i < MAXPreserver; i++){
+	
+		//Copying all Frozen Atoms to UnFreeze State
+		if(LifePreserverFreeze[i] == 1){
+			
+			PAtom[i] = new ofAtom(1,i, PAtomFreeze[i]->m_posX, PAtomFreeze[i]->m_posY , RADIUS);
+			LifePreserver[i] = 1;	
+			LifePreserverFreeze[i] = 0;
+			delete [] PAtomFreeze[i];
+				
+		}
+	}
+
+	//Creating Atom
+	if(P_isInstance == 1 && P_flagInstance == 0){
+		P_flagInstance = 1;
+		indexPreserver = MAXPreserver;
+		for(int i = 0; i < MAXPreserver; i++){
+			if(LifePreserver[i] == 0){
+				indexPreserver = i;
+				break;
+			}
+		}
+	
+		if(indexPreserver < MAXPreserver){
+			PAtom[indexPreserver] = new ofAtom(1,indexPreserver, P_OSCPosX, P_OSCPosY , RADIUS);
+			LifePreserver[indexPreserver] = 1;
+			n_Preserver++;
+		}
+	}
+	else if(P_isInstance == 0 && P_flagInstance == 1)
+		P_flagInstance = 0;
+
+
+	//Allowing Interaction (Bhasad)
+	//Bhasad on
+	if(P_isInteract == 1){
+		virtualAtom[1]->assign(3, 1 , P_OSCPosX , P_OSCPosY , 0, 0, RADIUS/2);
+		virtualAtomInvisible[1]->assign(7, 1, 0, 0, 0, 0, RADIUS/2);
+			
+	}
+
+	//Bhasad Off
+	else if(P_isInteract == 0){
+		virtualAtom[1]->assign(3, 1 , 0 , 0 , 0, 0, RADIUS/2);
+		virtualAtomInvisible[1]->assign(7, 1 , P_OSCPosX , P_OSCPosY , 0, 0, RADIUS/2);
+		
+	}
+    }	
+
+
+    // Freeze Mode
+    else if(P_isFreeze == 1){
+
+	// Freezing all Atoms and copying them into freeze state
+	for(int i = 0; i < MAXPreserver; i++){
+		
+		if(LifePreserver[i] == 1){
+			
+			LifePreserver[i] = 0;
+			LifePreserverFreeze[i] = 1;	
+		
+			PAtomFreeze[i] = new ofAtom(5, i, PAtom[i]->m_posX, PAtom[i]->m_posY, RADIUS);
+			delete [] PAtom[i];	
+		}
+	}
+	
+	// Deleting an atom
+	if(P_isInstance == 1 && P_flagInstance == 0){
+
+		P_flagInstance = 1;
+
+		// Returns index of nearest atom of same type, and -1 if none are near.
+		indexPreserver = nearestAtom( 1, P_OSCPosX, P_OSCPosY);
+		if(indexPreserver != -1){
+
+			LifePreserverFreeze[indexPreserver] = 0;
+			delete [] PAtomFreeze[indexPreserver];	
+		}	
+	}
+	else if(P_isInstance == 0 && P_flagInstance == 1){
+		P_flagInstance = 0;
+	}
+
+
+	// Allow Moving the Atom
+	if(P_isInteract == 1){
+
+                virtualAtom[1]->assign(3, 1 , P_OSCPosX , P_OSCPosY , 0, 0, RADIUS/2);
+                virtualAtomInvisible[1]->assign(7, 1, 0, 0, 0, 0, RADIUS/2);
+
+		indexPreserver = nearestAtom( 1, virtualAtom[1]->m_posX, virtualAtom[1]->m_posY);
+		if(indexPreserver != -1){
+			
+			PAtomFreeze[indexPreserver]->assign(5, indexPreserver, P_OSCPosX, P_OSCPosY, 0, 0, RADIUS);
+
+		}
+		
+	}
+	else if(P_isInteract == 0){
+
+                virtualAtom[1]->assign(3, 1 , 0 , 0 , 0, 0, RADIUS/2);
+                virtualAtomInvisible[1]->assign(7, 1 , P_OSCPosX , P_OSCPosY , 0, 0, RADIUS/2);
+	
+	}
+
+    }
+
+
+    }
+    // --------------------------------------------------------------------------------
+
+    while(D_receiver.hasWaitingMessages()){
+	
+	D_receiver.getNextMessage(D_OSC);
+	
+    	if(D_OSC.getAddress() == "/freeze"){
+		D_isFreeze = D_OSC.getArgAsInt32(0);
+    	}
+    	if(D_OSC.getAddress() == "/push1"){
+    		D_isInstance = D_OSC.getArgAsInt32(0);
+    	}
+    	if(D_OSC.getAddress() == "/push2"){
+		D_isInteract = D_OSC.getArgAsInt32(0);
+    	}
+    	if(D_OSC.getAddress() == "/xyPad"){
+		D_OSCPosX = 1280 * D_OSC.getArgAsFloat(0);
+        	D_OSCPosY = 720 * D_OSC.getArgAsFloat(1);
+    	}
     
-    for(unsigned int i = 0; i < (unsigned int)TCP.getLastID(); i++){
-        
-        if( !TCP.isClientConnected(i) )continue;
-        // get the ip and port of the client
-        string port = ofToString( TCP.getClientPort(i) );
-        string ip   = TCP.getClientIP(i);
-        string info = "client "+ofToString(i)+" -connected from "+ip+" on port: "+port;
-        
-        if(i >= storeText.size() ){
-            storeText.push_back( string() );
+
+    // Check for Creator Freeze OSC Msg
+    // Not in freeze mode
+    if(D_isFreeze == 0 || D_isFreeze == 2) {
+
+	//Displaying Cursor Position as virtualAtomInvisible
+	virtualAtomInvisible[2]->assign(7, 2 , D_OSCPosX , D_OSCPosY , 0, 0, RADIUS/2);
+	
+	for(int i = 0; i < MAXDestroyer; i++){
+	
+		//Copying all Frozen Atoms to UnFreeze State
+		if(LifeDestroyerFreeze[i] == 1){
+			
+			DAtom[i] = new ofAtom(2,i, DAtomFreeze[i]->m_posX, DAtomFreeze[i]->m_posY , RADIUS);
+			LifeDestroyer[i] = 1;	
+			LifeDestroyerFreeze[i] = 0;
+			delete [] DAtomFreeze[i];
+				
+		}
+	}
+
+	//Creating Atom
+	if(D_isInstance == 1 && D_flagInstance == 0){
+		D_flagInstance = 1;
+		indexDestroyer = MAXDestroyer;
+		for(int i = 0; i < MAXDestroyer; i++){
+			if(LifeDestroyer[i] == 0){
+				indexDestroyer = i;
+				break;
+			}
+		}
+	
+		if(indexDestroyer < MAXDestroyer){
+			DAtom[indexDestroyer] = new ofAtom(2,indexDestroyer, D_OSCPosX, D_OSCPosY , RADIUS);
+			LifeDestroyer[indexDestroyer] = 1;
+			n_Destroyer++;
+		}
+	}
+	else if(D_isInstance == 0 && D_flagInstance == 1)
+		D_flagInstance = 0;
+
+
+	//Allowing Interaction (Bhasad)
+	//Bhasad on
+	if(D_isInteract == 1){
+		virtualAtom[2]->assign(3, 2 , D_OSCPosX , D_OSCPosY , 0, 0, RADIUS/2);
+		virtualAtomInvisible[2]->assign(7, 2, 0, 0, 0, 0, RADIUS/2);
+			
+	}
+
+	//Bhasad Off
+	else if(D_isInteract == 0){
+		virtualAtom[2]->assign(3, 2 , 0 , 0 , 0, 0, RADIUS/2);
+		virtualAtomInvisible[2]->assign(7, 2 , D_OSCPosX , D_OSCPosY , 0, 0, RADIUS/2);
+		
+	}
+    }	
+
+
+    // Freeze Mode
+    else if(D_isFreeze == 1){
+
+	// Freezing all Atoms and copying them into freeze state
+	for(int i = 0; i < MAXDestroyer; i++){
+		
+		if(LifeDestroyer[i] == 1){
+			
+			LifeDestroyer[i] = 0;
+			LifeDestroyerFreeze[i] = 1;	
+		
+			DAtomFreeze[i] = new ofAtom(6, i, DAtom[i]->m_posX, DAtom[i]->m_posY, RADIUS);
+			delete [] DAtom[i];	
+		}
+	}
+	
+	// Deleting an atom
+	if(D_isInstance == 1 && D_flagInstance == 0){
+
+		D_flagInstance = 1;
+
+		// Returns index of nearest atom of same type, and -1 if none are near.
+		indexDestroyer = nearestAtom( 2, D_OSCPosX, D_OSCPosY);
+		if(indexDestroyer != -1){
+
+			LifeDestroyerFreeze[indexDestroyer] = 0;
+			delete [] DAtomFreeze[indexDestroyer];	
+		}	
+	}
+	else if(D_isInstance == 0 && D_flagInstance == 1){
+		D_flagInstance = 0;
+	}
+
+
+	// Allow Moving the Atom
+	if(D_isInteract == 1){
+
+                virtualAtom[2]->assign(3, 2 , D_OSCPosX , D_OSCPosY , 0, 0, RADIUS/2);
+                virtualAtomInvisible[2]->assign(7, 2, 0, 0, 0, 0, RADIUS/2);
+
+		indexDestroyer = nearestAtom( 2, virtualAtom[2]->m_posX, virtualAtom[2]->m_posY);
+		if(indexDestroyer != -1){
+			
+			DAtomFreeze[indexDestroyer]->assign(6, indexDestroyer, D_OSCPosX, D_OSCPosY, 0, 0, RADIUS);
+
+		}
+		
+	}
+	else if(D_isInteract == 0){
+
+                virtualAtom[2]->assign(3, 2 , 0 , 0 , 0, 0, RADIUS/2);
+                virtualAtomInvisible[2]->assign(7, 2 , D_OSCPosX , D_OSCPosY , 0, 0, RADIUS/2);
+	
+	}
+
+    }
+
+
+    }
+
+
+    // NEW CODE ENDS HERE ------------------------------------------------------------------------------------
+
+
+    // -------/----------------------------------------------------------------------------------------------- 
+    
+    /*
+
+    // Creating Atoms at every BEATRATE seconds --------------------------------------------------------------
+    if((ofGetFrameNum()%(BEATRATE*FRAMERATE)==0) && TheEnd == 0 )
+    {
+        indexCreator = MAXCreator;
+        for(int i = 0; i < MAXCreator; i++){
+            if(LifeCreator[i] == 0){
+                indexCreator = i;    // First Available Creator ID
+                break;
+            }
         }
         
-        string tmp, str;
-        do{
-            str = tmp;
-            tmp = TCP.receive(i);
-        }while(tmp!="");
-        
-        // if there was a message set it to the corresponding client
-        if(str.length() > 0){
-            storeText[i] = str;
-        }
-        else{
-            storeText[i] = "";
-        }
-        
-        //cout<<info<<endl;
-        //cout<<storeText[i]<< "<< THIS IS THE MSG"<<endl;
-        
-        stringstream ss(storeText[i]);
-        vector<int> vect;
-        int token;
-        while ( ss >> token) {
-            vect.push_back(token);
-        }
-        
-        int type, id, posX, posY, velX, velY;
-        
-        // vect is an array received from TCP of the format (type,id,X,Y)
-        if(vect.size() > 0){
+        //Checking if there is space in the environment for creating a Creator Atom
+        if( indexCreator < MAXCreator){
             
-            type = vect[0];
-            id = vect[1];
-            posX = vect[2];
-            posY = vect[3];
-            velX = vect[4];
-            velY = vect[5];
+            CAtom[indexCreator] = new ofAtom(0,indexCreator,centroidmax1.x,centroidmax1.y,RADIUS);            
+
+            if(variableVelocityFlag)
+                CAtom[indexCreator]->assignVelocity(velocity1.x,velocity1.y);
             
-            if(type == 0) {
-                
-                CAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
-                CAtom[id]->assignVelocity(velX,velY);
-                
-                LifeCreator[id] = 1;
+            LifeCreator[indexCreator] = 1;
+            
+            // Update n_Creator if it hasnt reached MAX even once.
+            if(n_Creator < MAXCreator)
                 n_Creator++;
-                
-            }
-            
-            if(type == 2) {
-                
-                DAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
-                DAtom[id]->assignVelocity(velX,velY);
-                
-                
-                LifeDestroyer[id] = 1;
-                n_Destroyer++;
-                
-            }
-            
         }
-        
     }
     
-    
-    
-#elif USER_DESTROYER
-    for(unsigned int i = 0; i < (unsigned int)TCP.getLastID(); i++){
+    // Creating Preserver Atoms at every 2 seconds
+    if(TheEnd == 0 && n_Preserver < MAXPreserver && (ofGetFrameNum() > (BEATRATE*FRAMERATE*MAXCreator) && ofGetFrameNum()%(BEATRATE*FRAMERATE) == 0))
+    {
+        PAtom[n_Preserver] = new ofAtom(1,n_Preserver,centroidmax2.x,centroidmax2.y,RADIUS);
         
-        if( !TCP.isClientConnected(i) )continue;
-        // get the ip and port of the client
-        string port = ofToString( TCP.getClientPort(i) );
-        string ip   = TCP.getClientIP(i);
-        string info = "client "+ofToString(i)+" -connected from "+ip+" on port: "+port;
+        LifePreserver[n_Preserver] = 1;
         
-        if(i >= storeText.size() ){
-            storeText.push_back( string() );
-        }
-        
-        string tmp, str;
-        do{
-            str = tmp;
-            tmp = TCP.receive(i);
-        }while(tmp!="");
-        
-        // if there was a message set it to the corresponding client
-        if(str.length() > 0){
-            storeText[i] = str;
-        }
-        else{
-            storeText[i] = "";
-        }
-        
-        //cout<<info<<endl;
-        //cout<<storeText[i]<< "<< THIS IS THE MSG"<<endl;
-        
-        stringstream ss(storeText[i]);
-        vector<int> vect;
-        int token;
-        while ( ss >> token) {
-            vect.push_back(token);
-        }
-        
-        int type, id, posX, posY, velX, velY;
-        
-        // vect is an array received from TCP of the format (type,id,X,Y)
-        if(vect.size() > 0){
-            
-            type = vect[0];
-            id = vect[1];
-            posX = vect[2];
-            posY = vect[3];
-            velX = vect[4];
-            velY = vect[5];
-            
-            
-            if(type == 0) {
-                
-                CAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
-                CAtom[id]->assignVelocity(velX,velY);
-                
-                LifeCreator[id] = 1;
-                n_Creator++;
-            }
-            
-            if(vect[0] == 1) {
-                
-                PAtom[id] = new ofAtom(type,id,posX,posY,RADIUS);
-                PAtom[id]->assignVelocity(velX,velY);
-                
-                LifePreserver[id] = 1;
-                n_Preserver++;
-            }
-            
-        }
-        
+        if(variableVelocityFlag)
+            PAtom[n_Preserver]->assignVelocity(velocity2.x,velocity2.y);
+        n_Preserver++;
     }
     
+    // Creating Destroyer Atoms at every 2 seconds
+    if(TheEnd == 0 && n_Destroyer < MAXDestroyer && (ofGetFrameNum() > ((BEATRATE*FRAMERATE)*(MAXCreator + MAXPreserver)) && ofGetFrameNum()%(BEATRATE*FRAMERATE) == 0))
+    {
+        DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer,centroidmax3.x,centroidmax3.y,RADIUS);
+        
+        LifeDestroyer[n_Destroyer] = 1;
+        
+        if(variableVelocityFlag)
+            DAtom[n_Destroyer]->assignVelocity(velocity3.x,velocity3.y);
+        n_Destroyer++;
+    }
     
-#endif
+    */
     
     //Initializing Collision status matrix --------------------------------------------------------------
     for(int j = 0; j < MAXCreator; j++)
@@ -538,30 +865,30 @@ void ofApp::update() {
     //Kill the Last atom
     flag = 0;
     if(TheEnd == 1){
-        for(int i = 0; i < MAXCreator; i++)
-            if(LifeCreator[i])
-                flag++;
-        
-        for(int i = 0; i < MAXPreserver; i++)
-            if(LifePreserver[i])
-                flag++;
-        
-        for(int i = 0; i < MAXDestroyer; i++)
-            if(LifeDestroyer[i])
-                flag++;
-        
-        if(flag == 1){
-            for(int i = 0; i < MAXCreator; i++)
-                if(LifeCreator[i])
-                    Destroy(CAtom[i]);
-            for(int i = 0; i < MAXPreserver; i++)
-                if(LifePreserver[i])
-                    Destroy(PAtom[i]);
-            for(int i = 0; i < MAXDestroyer; i++)
-                if(LifeDestroyer[i])
-                    Destroy(DAtom[i]);
-            
-        }
+	for(int i = 0; i < MAXCreator; i++)
+	    if(LifeCreator[i])
+	        flag++;
+
+	for(int i = 0; i < MAXPreserver; i++)
+	    if(LifePreserver[i])
+		flag++;
+
+	for(int i = 0; i < MAXDestroyer; i++)
+	    if(LifeDestroyer[i])
+		flag++;
+
+	if(flag == 1){
+	    for(int i = 0; i < MAXCreator; i++)
+		if(LifeCreator[i])
+			Destroy(CAtom[i]);
+	    for(int i = 0; i < MAXPreserver; i++)
+		if(LifePreserver[i])
+			Destroy(PAtom[i]);
+	    for(int i = 0; i < MAXDestroyer; i++)
+		if(LifeDestroyer[i])
+			Destroy(DAtom[i]);
+	
+	}
     }
     
     
@@ -578,21 +905,21 @@ void ofApp::update() {
     
     // Debugging Display
     
-    /*
+     /*
      for(int i = 0; i < MAXCreator; i++)
-     cout<<LifeCreator[i]<<" ";
-     cout<<"C"<<endl;
-     
+	cout<<LifeCreator[i]<<" ";
+	cout<<"C"<<endl;
+
      for(int i = 0; i < MAXPreserver; i++)
-     cout<<LifePreserver[i]<<" ";
-     cout<<"P"<<endl;
-     
+	cout<<LifePreserver[i]<<" ";
+	cout<<"P"<<endl;
+
      for(int i = 0;i < MAXDestroyer; i++)
-     cout<<LifeDestroyer[i]<<" ";
-     cout<<"D"<<endl;
+	cout<<LifeDestroyer[i]<<" ";
+	cout<<"D"<<endl;
      */
-    /*
-     
+     /*
+
      for(int j = 0; j < MAXCreator; j++){
      for(int i = 0; i < MAXPreserver; i++){
      cout<<FxMatrix[j][i]<<" ";
@@ -604,7 +931,7 @@ void ofApp::update() {
      */
     
     //OSC codes ----------------------------------------------------------------------------------
-    
+    /*
     // First Msg on first frame of code
     if(ofGetFrameNum() == 1){
         PowerOn.addIntArg(1);
@@ -653,7 +980,7 @@ void ofApp::update() {
         }
         
     }
-    
+    */
 }
 
 void ofApp::draw() {
@@ -680,8 +1007,19 @@ void ofApp::draw() {
     if(startOfEnd==1)
         ofNoFill();
     
+    //Code to flip everything laterally, write all the drawing code between this and ofPopMatrix()
+    //ofPushMatrix(); // save the old coordinate system
+    //ofTranslate( ofGetWidth(), 0.0f); // move the origin to the bottom-left hand corner of the window
+    //ofScale(-1.0f, 1.0f); // flip the x axis horizontally
+    
+    
+    
     //Atoms Code
     //Loop through all existing atoms.
+    
+
+    // TODO:Check for Freeze mode
+
     for(int i = 0; i < n_Creator; i++){
         
         if(LifeCreator[i])
@@ -695,7 +1033,36 @@ void ofApp::draw() {
         if(LifeDestroyer[i])
             DAtom[i]->draw();
     }
+   
+
+
+    // Draw Virtual Atoms 
+    for(int i = 0; i < 3; i++){
+    virtualAtom[i]->draw(); 
+	}
     
+    // TODO: Draw Virtual Atoms in Un Freeze Mode
+    for(int i = 0; i < 3; i++){
+    virtualAtomInvisible[i]->draw();
+	}
+
+    // Draw Frozen Atoms
+    for(int i = 0; i < n_Creator; i++){
+
+        if(LifeCreatorFreeze[i])
+            CAtomFreeze[i]->draw();
+    }
+    for(int i = 0; i < n_Preserver; i++){
+        if(LifePreserverFreeze[i])
+            PAtomFreeze[i]->draw();
+    }
+    for(int i = 0; i < n_Destroyer; i++){
+        if(LifeDestroyerFreeze[i])
+            DAtomFreeze[i]->draw();
+    }
+
+
+
     // DYING CREATOR ATOMS GRAPHICS
     if( TheEnd == 0){
         for(int i = 0; i < MAXCreator; i++){
@@ -735,106 +1102,11 @@ void ofApp::draw() {
     blur.end();
     blur.draw();
     
-    //gui.draw();
+    gui.draw();
 }
 
 void ofApp::mousePressed(int x, int y, int button) {
-    
-    // CREATING ON MOUSE PRESS-------------------------------------------------------------------------------
-    
-#if USER_CREATOR
-    
-    indexCreator = MAXCreator;
-    for(int i = 0; i < MAXCreator; i++){
-        if(LifeCreator[i] == 0){
-            indexCreator = i;    // First Available Creator ID
-            break;
-        }
-    }
-    
-    //Checking if there is space in the environment for creating a Creator Atom
-    if( indexCreator < MAXCreator){
-        
-        CAtom[indexCreator] = new ofAtom(0,indexCreator,x,y,RADIUS);
-        
-        //  if(variableVelocityFlag)
-        //      CAtom[indexCreator]->assignVelocity(velocity1.x,velocity1.y);
-        
-        LifeCreator[indexCreator] = 1;
-        
-        int velX, velY;
-        velX = CAtom[indexCreator]->m_velocityX;
-        velY = CAtom[indexCreator]->m_velocityY;
-        
-        // TCP:
-        if(tcpClient.isConnected()){
-            
-            msgTx = "0 " + ofToString(indexCreator) + " " + ofToString(x) + " " + ofToString(y) + " "+ofToString(velX) + " " + ofToString(velY) + " ";
-            tcpClient.send(msgTx);
-            msgTx = "";
-        }
-        // Update n_Creator if it hasnt reached MAX even once.
-        if(n_Creator < MAXCreator)
-            n_Creator++;
-        
-    }
-    
-#elif USER_PRESERVER
-    
-    if ( n_Preserver < MAXPreserver) {
-        PAtom[n_Preserver] = new ofAtom(1,n_Preserver, x, y,RADIUS);
-        
-        LifePreserver[n_Preserver] = 1;
-        
-        //if(variableVelocityFlag)
-        //	PAtom[n_Preserver]->assignVelocity(velocity2.x,velocity2.y);
-        
-        int velX, velY;
-        velX = PAtom[n_Preserver]->m_velocityX;
-        velY = PAtom[n_Preserver]->m_velocityY;
-        
-        //TCP:
-        if(tcpClient.isConnected()){
-            
-            msgTx = "1 " + ofToString(n_Preserver) + " " + ofToString(x) + " " + ofToString(y) + " " + ofToString(velX) + " " + ofToString(velY) + " ";
-            tcpClient.send(msgTx);
-            msgTx = "";
-        }
-        
-        n_Preserver++;
-    }
-    
-    
-    
-    
-#elif USER_DESTROYER
-    if ( n_Destroyer < MAXDestroyer) {
-        DAtom[n_Destroyer] = new ofAtom(2,n_Destroyer, x, y,RADIUS);
-        
-        LifeDestroyer[n_Destroyer] = 1;
-        
-        //if(variableVelocityFlag)
-        //	DAtom[n_Destroyer]->assignVelocity(velocity3.x,velocity3.y);
-        
-        int velX, velY;
-        velX = DAtom[n_Destroyer]->m_velocityX;
-        velY = DAtom[n_Destroyer]->m_velocityY;
-        
-        
-        //TCP:
-        if(tcpClient.isConnected()){
-            
-            msgTx = "2 " + ofToString(n_Destroyer) + " " + ofToString(x) + " " + ofToString(y) + " " + ofToString(velX) + " " + ofToString(velY) + " ";
-            tcpClient.send(msgTx);
-            msgTx = "";
-        }
-        n_Destroyer++;
-        
-    }
-    
-#endif
-    
-    
+    //targetColor = cam.getPixels().getColor(x, y);
 }
 
 
@@ -847,6 +1119,8 @@ void ofApp::keyPressed(int key){
             for(int i = 0; i < n_Creator; i++){
                 if(LifeCreator[i])
                     delete [] CAtom[i];
+		if(LifeCreatorFreeze[i])
+                    delete [] CAtomFreeze[i];
             }
             for(int i = 0; i < MAXCreator; i++){
                 delete [] dyingEnvironment[i];
@@ -854,14 +1128,22 @@ void ofApp::keyPressed(int key){
             for(int i = 0; i < n_Preserver; i++){
                 if(LifePreserver[i])
                     delete [] PAtom[i];
+		if(LifePreserverFreeze[i])
+		    delete [] PAtomFreeze[i];
             }
             for(int i = 0; i < n_Destroyer; i++){
                 if(LifeDestroyer[i])
                     delete [] DAtom[i];
+		if(LifeDestroyerFreeze[i])
+			delete [] DAtomFreeze[i];
             }
             for(int i = 0; i < MAXAtoms; i++){
                 delete [] dyingEnd[i];
             }
+	    for(int i = 0; i <3; i++){
+		delete [] virtualAtom[i];
+		delete [] virtualAtomInvisible[i];
+	    }
             //timeEndPeriod(1);
             ofExit();
             break;
@@ -897,7 +1179,7 @@ void ofApp::Destroy(ofAtom* Atom){
         LifeDestroyer[Atom->m_id] = 0;
         dyingEnd[MAXCreator + MAXPreserver + Atom->m_id]->assign(Atom->m_posX, Atom->m_posY, Atom->m_velocityX, Atom->m_velocityY, 1,0,2);
     }
-    // This sets a reset on the counter upto DYINGTIME
+    // This sets a reset on the counter upto DYINGTIME	
     ofResetElapsedTimeCounter();
     
     // Free the memory assigned to Atom
@@ -933,4 +1215,62 @@ void ofApp::Granulate(ofDyingAtom * GranulateAtom){
     ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX/2), GranulateAtom->m_posY + (alpha*scale*directionY/2), RADIUS/3);
     ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX*3/2), GranulateAtom->m_posY + (alpha*scale*directionY/2), RADIUS/3);	
     ofDrawCircle(GranulateAtom->m_posX + (alpha*scale*directionX/2), GranulateAtom->m_posY + (alpha*scale*directionY*3/2), RADIUS/3);
+}
+
+
+int ofApp::nearestAtom(int type, int posX, int posY){
+
+	int dist;
+	int min = 10000;
+	int index;
+
+	if(type == 0){
+
+		for(int i = 0; i <MAXCreator; i++){
+			if(LifeCreatorFreeze[i] == 1){
+
+				dist = ofDist(CAtomFreeze[i]->m_posX, CAtomFreeze[i]->m_posY, posX, posY);				
+
+				if(dist < min){
+					min = dist;
+					index = i;
+				}
+			}
+		}
+	
+
+	}
+	else if(type == 1){
+
+                for(int i = 0; i <MAXPreserver; i++){
+                        if(LifePreserverFreeze[i] == 1){
+
+                                dist = ofDist(PAtomFreeze[i]->m_posX, PAtomFreeze[i]->m_posY, posX, posY);
+                                if(dist < min){
+                                        min = dist;
+                                        index = i;
+                                }
+                        }
+                }
+        }
+	else if(type == 2){
+
+                for(int i = 0; i <MAXDestroyer; i++){
+                        if(LifeDestroyerFreeze[i] == 1){
+
+                                dist = ofDist(DAtomFreeze[i]->m_posX, DAtomFreeze[i]->m_posY, posX, posY);
+                                if(dist < min){
+                                        min = dist;
+                                        index = i;
+                                }
+                        }
+                }
+        }
+
+	// If the nearest Atom is further than NEAR_THRESHOLD return -1
+	if(min > NEAR_THRESHOLD)
+		return -1;
+
+	return index;
+
 }
