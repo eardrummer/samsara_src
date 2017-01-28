@@ -74,33 +74,50 @@ void ofAtom::draw(){
         ofSetColor(60,250,115);
     else if(m_type == 2)
         ofSetColor(255,60,0);
-    else if(m_type == 3 && m_id == 0)
-	ofSetColor(255,0,0);
+    else if(m_type == 3 && m_id == 0){
+	ofSetColor(255,255,255);
+	ofNoFill();
+	ofSetLineWidth(50);
+	}
 	//ofSetColor(cyanPrint);
-    else if(m_type == 3 && m_id == 1)
-	 ofSetColor(255,0,0);
+    else if(m_type == 3 && m_id == 1){
+	 ofSetColor(60,250,115);
+	ofSetLineWidth(50);
+	ofNoFill();
+	}
 	//ofSetColor(yellowPrint);
-    else if(m_type == 3 && m_id == 2)
+    else if(m_type == 3 && m_id == 2){
 	//ofSetColor(magentaPrint);
-	 ofSetColor(255,0,0);
+	 ofSetColor(255,60,0);
+	ofSetLineWidth(50);
+	ofNoFill();
+	}
     else if(m_type == 4)
-	ofSetColor(50,240,105);
+	ofSetColor(112,112,112);
 	//Insert Color for Frozen Creator
     else if(m_type == 5)
-	 ofSetColor(255,0,0);
+	 ofSetColor(30,125,55);
 	//Insert Color for Frozen Preserver
     else if(m_type == 6)
-	 ofSetColor(255,0,0);
+	 ofSetColor(112,30,0);
 	//Insert Color for Frozen Invisible Creator
-    else if(m_type == 7 && m_id == 0)
-	ofSetColor(255,100,0);
+    else if(m_type == 7 && m_id == 0){
+	ofSetColor(112,112,112);
+	ofSetLineWidth(20);
+	ofNoFill();
+	}
         //Insert Color for Frozen Invisible Preserver
-/*    else if(m_type == 7 && m_id == 1)
-        ofSetColor(255,0,0);
+    else if(m_type == 7 && m_id == 1){
+        ofSetColor(30,125,55);
+	ofNoFill();
+	ofSetLineWidth(20);
+	}
         //Insert Color for Frozen Invisible Destroyer
-    else if(m_type == 7 && m_id == 2)
-        ofSetColor(255,0,0);
-*/
+    else if(m_type == 7 && m_id == 2){
+        ofSetColor(112,30,0);
+	ofNoFill();
+	ofSetLineWidth(20);
+	}
 
     ofDrawCircle(m_posX, m_posY, m_radius);
     
@@ -215,6 +232,27 @@ void ofAtom::assign(int type, int id, int posX, int posY, int velocityX, int vel
     m_radius = radius;
     
 }
+
+//---------------------------------------------------------------------------------------
+
+void ofAtom::assign(int type, int id, int posX, int posY, int radius){
+
+    m_type = type;
+    m_id = id;
+    m_posX = posX;
+    m_posY = posY;
+    m_radius = radius;
+
+        m_velocityX = ofRandom(-10, 10);
+        m_velocityY = ofRandom(-10, 10);
+
+        if(m_velocityX == 0)
+            m_velocityX = 1;
+        if(m_velocityY == 0)
+            m_velocityY = 1;
+
+}
+
 
 //----------------------------------------------------------------------------------------
 float ofAtom::atomFxDist(ofAtom* PAtom){

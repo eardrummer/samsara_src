@@ -30,6 +30,7 @@ public:
     int collide(ofAtom* nearAtom);		//nearAtom is the Atom nearest to this.ofAtom
     void assignVelocity(int velocityX, int velocityY); 
     void assign(int type, int id, int posX, int posY, int velocityX, int velocityY, int radius);
+    void assign(int type, int id, int posX, int posY, int radius);
     float atomFxDist(ofAtom* PAtom);		//Calculates distance from closest Fx Atom (Preserver Atom)
 
 };

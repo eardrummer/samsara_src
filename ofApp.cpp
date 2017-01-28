@@ -43,16 +43,30 @@ void ofApp::setup() {
     for(int i = 0; i < MAXCreator; i++){
         LifeCreator[i] = 0;
         LifeCreatorFreeze[i] = 0;
+
+	// dummy variables
+	CAtom[i] = new ofAtom(0,i,0,0,RADIUS);
+	CAtomFreeze[i] = new ofAtom(4,i,0,0,RADIUS);
     }
     //Initializing LifePreserver - status of each Preserver
     for(int i = 0; i < MAXPreserver; i++){
         LifePreserver[i] = 0;
         LifePreserverFreeze[i] = 0;
+
+        // dummy variables
+        PAtom[i] = new ofAtom(1,i,0,0,RADIUS);
+        PAtomFreeze[i] = new ofAtom(5,i,0,0,RADIUS);
+
     }
     //Initializing LifeDestroyer - status
     for(int i = 0; i < MAXDestroyer; i++){
         LifeDestroyer[i] = 0;
         LifeDestroyerFreeze[i] = 0;
+
+        // dummy variables
+        DAtom[i] = new ofAtom(2,i,0,0,RADIUS);
+        DAtomFreeze[i] = new ofAtom(6,i,0,0,RADIUS);
+
     }
     //Initializing dying Environment - Status to check if that Creator is currently dying and its pos,vel
     dyingEnvironment = new ofDyingAtom*[MAXCreator];
@@ -175,6 +189,7 @@ void ofApp::update() {
         
         
         // Check for Creator Freeze OSC Msg
+
         // Not in freeze mode
         if(C_isFreeze == 0 || C_isFreeze == 2) {
             
@@ -186,10 +201,10 @@ void ofApp::update() {
                 //Copying all Frozen Atoms to UnFreeze State
                 if(LifeCreatorFreeze[i] == 1){
                     
-                    CAtom[i] = new ofAtom(0,i, CAtomFreeze[i]->m_posX, CAtomFreeze[i]->m_posY , RADIUS);
+                    CAtom[i]->assign(0,i, CAtomFreeze[i]->m_posX, CAtomFreeze[i]->m_posY , RADIUS);
                     LifeCreator[i] = 1;
                     LifeCreatorFreeze[i] = 0;
-                    delete [] CAtomFreeze[i];
+                    //delete [] CAtomFreeze[i];
                     
                 }
             }
@@ -206,7 +221,7 @@ void ofApp::update() {
                 }
                 
                 if(indexCreator < MAXCreator){
-                    CAtom[indexCreator] = new ofAtom(0,indexCreator, C_OSCPosX, C_OSCPosY , RADIUS);
+                    CAtom[indexCreator]->assign(0,indexCreator, C_OSCPosX, C_OSCPosY , RADIUS);
                     LifeCreator[indexCreator] = 1;
                     n_Creator++;
                 }
@@ -243,8 +258,8 @@ void ofApp::update() {
                     LifeCreator[i] = 0;
                     LifeCreatorFreeze[i] = 1;
                     
-                    CAtomFreeze[i] = new ofAtom(4, i, CAtom[i]->m_posX, CAtom[i]->m_posY, RADIUS);
-                    delete [] CAtom[i];
+                    CAtomFreeze[i]->assign(4, i, CAtom[i]->m_posX, CAtom[i]->m_posY, RADIUS);
+                    //delete [] CAtom[i];
                 }
             }
             
@@ -258,7 +273,7 @@ void ofApp::update() {
                 if(indexCreator != -1){
                     
                     LifeCreatorFreeze[indexCreator] = 0;
-                    delete [] CAtomFreeze[indexCreator];
+                    //delete [] CAtomFreeze[indexCreator];
                 }
             }
             else if(C_isInstance == 0 && C_flagInstance == 1){
@@ -323,10 +338,10 @@ void ofApp::update() {
                 //Copying all Frozen Atoms to UnFreeze State
                 if(LifePreserverFreeze[i] == 1){
                     
-                    PAtom[i] = new ofAtom(1,i, PAtomFreeze[i]->m_posX, PAtomFreeze[i]->m_posY , RADIUS);
+                    PAtom[i]->assign(1,i, PAtomFreeze[i]->m_posX, PAtomFreeze[i]->m_posY , RADIUS);
                     LifePreserver[i] = 1;
                     LifePreserverFreeze[i] = 0;
-                    delete [] PAtomFreeze[i];
+                    //delete [] PAtomFreeze[i];
                     
                 }
             }
@@ -343,7 +358,7 @@ void ofApp::update() {
                 }
                 
                 if(indexPreserver < MAXPreserver){
-                    PAtom[indexPreserver] = new ofAtom(1,indexPreserver, P_OSCPosX, P_OSCPosY , RADIUS);
+                    PAtom[indexPreserver]->assign(1,indexPreserver, P_OSCPosX, P_OSCPosY , RADIUS);
                     LifePreserver[indexPreserver] = 1;
                     n_Preserver++;
                 }
@@ -380,8 +395,8 @@ void ofApp::update() {
                     LifePreserver[i] = 0;
                     LifePreserverFreeze[i] = 1;
                     
-                    PAtomFreeze[i] = new ofAtom(5, i, PAtom[i]->m_posX, PAtom[i]->m_posY, RADIUS);
-                    delete [] PAtom[i];
+                    PAtomFreeze[i]->assign(5, i, PAtom[i]->m_posX, PAtom[i]->m_posY, RADIUS);
+                    //delete [] PAtom[i];
                 }
             }
             
@@ -395,7 +410,7 @@ void ofApp::update() {
                 if(indexPreserver != -1){
                     
                     LifePreserverFreeze[indexPreserver] = 0;
-                    delete [] PAtomFreeze[indexPreserver];
+                    //delete [] PAtomFreeze[indexPreserver];
                 }
             }
             else if(P_isInstance == 0 && P_flagInstance == 1){
@@ -461,10 +476,10 @@ void ofApp::update() {
                 //Copying all Frozen Atoms to UnFreeze State
                 if(LifeDestroyerFreeze[i] == 1){
                     
-                    DAtom[i] = new ofAtom(2,i, DAtomFreeze[i]->m_posX, DAtomFreeze[i]->m_posY , RADIUS);
+                    DAtom[i]->assign(2,i, DAtomFreeze[i]->m_posX, DAtomFreeze[i]->m_posY , RADIUS);
                     LifeDestroyer[i] = 1;
                     LifeDestroyerFreeze[i] = 0;
-                    delete [] DAtomFreeze[i];
+                    //delete [] DAtomFreeze[i];
                     
                 }
             }
@@ -481,7 +496,7 @@ void ofApp::update() {
                 }
                 
                 if(indexDestroyer < MAXDestroyer){
-                    DAtom[indexDestroyer] = new ofAtom(2,indexDestroyer, D_OSCPosX, D_OSCPosY , RADIUS);
+                    DAtom[indexDestroyer]->assign(2,indexDestroyer, D_OSCPosX, D_OSCPosY , RADIUS);
                     LifeDestroyer[indexDestroyer] = 1;
                     n_Destroyer++;
                 }
@@ -518,8 +533,8 @@ void ofApp::update() {
                     LifeDestroyer[i] = 0;
                     LifeDestroyerFreeze[i] = 1;
                     
-                    DAtomFreeze[i] = new ofAtom(6, i, DAtom[i]->m_posX, DAtom[i]->m_posY, RADIUS);
-                    delete [] DAtom[i];
+                    DAtomFreeze[i]->assign(6, i, DAtom[i]->m_posX, DAtom[i]->m_posY, RADIUS);
+                    //delete [] DAtom[i];
                 }
             }
             
@@ -533,7 +548,7 @@ void ofApp::update() {
                 if(indexDestroyer != -1){
                     
                     LifeDestroyerFreeze[indexDestroyer] = 0;
-                    delete [] DAtomFreeze[indexDestroyer];
+                    //delete [] DAtomFreeze[indexDestroyer];
                 }
             }
             else if(D_isInstance == 0 && D_flagInstance == 1){
@@ -666,16 +681,16 @@ void ofApp::update() {
     //Atoms Code ------------------------------------------------------------------------------
     
     
-    for (int i = 0; i < n_Creator; i++){
+    for (int i = 0; i < MAXCreator; i++){
         if(LifeCreator[i])
             CAtom[i]->update();
     }
     
-    for (int i = 0; i < n_Preserver; i++){
+    for (int i = 0; i < MAXPreserver; i++){
         if(LifePreserver[i])
             PAtom[i]->update();
     }
-    for (int i = 0; i < n_Destroyer; i++){
+    for (int i = 0; i < MAXDestroyer; i++){
         if(LifeDestroyer[i])
             DAtom[i]->update();
     }
@@ -685,29 +700,34 @@ void ofApp::update() {
     flag = 0;
     //Checking for Atoms Collisions
     //Creator
-    for(int j = 0; j < n_Creator; j++) {
-        for(int i = 0; i < n_Preserver; i++){
+    for(int j = 0; j < MAXCreator; j++) {
+        for(int i = 0; i < MAXPreserver; i++){
             
             if(LifeCreator[j] && LifePreserver[i]){
                 isCollidedPreserver[j][i] = CAtom[j]->collide(PAtom[i]);
                 
                 if(isCollidedPreserver[j][i] == 1 && TheEnd == 1){
                     Destroy(CAtom[j]);
+		    LifeCreator[j] = 0;
                     Destroy(PAtom[i]);
+		    LifePreserver[i] = 0;
                 }
             }
         }
         
         // Destruction Collisions
-        for(int i = 0; i < n_Destroyer; i++){
+        for(int i = 0; i < MAXDestroyer; i++){
             
             if(LifeCreator[j] && LifeDestroyer[i]){
                 isCollidedDestroyer[j][i] = CAtom[j]->collide(DAtom[i]);
                 if(isCollidedDestroyer[j][i] == 2){
                     Destroy(CAtom[j]);
+		    LifeCreator[j] = 0;
                     
-                    if(TheEnd == 1)
+                    if(TheEnd == 1){
                         Destroy(DAtom[i]);
+			LifeDestroyer[i] = 0;
+		    }
                 }
             }
         }
@@ -715,12 +735,14 @@ void ofApp::update() {
         for(int i = 0; i < 3; i ++){
             if(LifeCreator[j]){
                 isCollidedVirtual[j] = CAtom[j]->collide(virtualAtom[i]);
-                if(isCollidedVirtual[j] == 3 && i == 2)
+                if(isCollidedVirtual[j] == 3 && i == 2){
                     Destroy(CAtom[j]);
+		    LifeCreator[j] = 0;
+		}
             }
         }
         
-        for(int i = 0; i < n_Creator; i++){
+        for(int i = 0; i < MAXCreator; i++){
             //TODO: Check for distance from other creator atoms
             
             if(LifeCreator[j] && LifeCreator[i])
@@ -728,30 +750,36 @@ void ofApp::update() {
                     flag = CAtom[j]->collide(CAtom[i]);
                     if(TheEnd == 1 && flag == 1){
                         Destroy(CAtom[j]);
+			LifeCreator[j] = 0;
                         Destroy(CAtom[i]);
+			LifeCreator[i] = 0;
                     }
                 }
         }
     }
     
     //Preserver
-    for(int j = 0; j < n_Preserver; j++){
-        for(int i = 0; i < n_Destroyer; i++){
+    for(int j = 0; j < MAXPreserver; j++){
+        for(int i = 0; i < MAXDestroyer; i++){
             if(LifePreserver[j] && LifeDestroyer[i]){
                 flag = PAtom[j]->collide(DAtom[i]);
                 if(TheEnd == 1 && flag == 1){
                     Destroy(PAtom[j]);
+		    LifePreserver[j] = 0;
                     Destroy(DAtom[i]);
+		    LifeDestroyer[i] = 0;
                 }
             }
         }
-        for(int i = 0; i < n_Preserver; i++){
+        for(int i = 0; i < MAXPreserver; i++){
             if(LifePreserver[j] && LifePreserver[i])
                 if(i!=j){
                     flag = PAtom[j]->collide(PAtom[i]);
                     if(TheEnd == 1 && flag == 1){
                         Destroy(PAtom[j]);
+			LifePreserver[j] = 0;
                         Destroy(PAtom[i]);
+			LifePreserver[i] = 0;
                     }
                 }
         }
@@ -763,14 +791,16 @@ void ofApp::update() {
         
     }
     //Destroyer
-    for(int j = 0; j < n_Destroyer; j++){
-        for(int i = 0; i < n_Destroyer; i++){
+    for(int j = 0; j < MAXDestroyer; j++){
+        for(int i = 0; i < MAXDestroyer; i++){
             if(LifeDestroyer[j] && LifeDestroyer[i])
                 if(i!=j){
                     flag = DAtom[j]->collide(DAtom[i]);
                     if(TheEnd == 1 && flag == 1){
                         Destroy(DAtom[j]);
+			LifeDestroyer[j] = 0;
                         Destroy(DAtom[i]);
+			LifeDestroyer[i] = 0;
                     }
                 }
             
@@ -799,14 +829,20 @@ void ofApp::update() {
         
         if(flag == 1){
             for(int i = 0; i < MAXCreator; i++)
-                if(LifeCreator[i])
+                if(LifeCreator[i]){
                     Destroy(CAtom[i]);
+		    LifeCreator[i] = 0;
+		}
             for(int i = 0; i < MAXPreserver; i++)
-                if(LifePreserver[i])
+                if(LifePreserver[i]){
                     Destroy(PAtom[i]);
+		    LifePreserver[i] = 0;
+		}
             for(int i = 0; i < MAXDestroyer; i++)
-                if(LifeDestroyer[i])
+                if(LifeDestroyer[i]){
                     Destroy(DAtom[i]);
+		    LifeDestroyer[i] = 0;
+		}
             
         }
     }
@@ -814,8 +850,8 @@ void ofApp::update() {
     
     // EFFECTS MATRIX
     
-    for(int j = 0; j < n_Creator; j++){
-        for(int i = 0; i < n_Preserver; i++){
+    for(int j = 0; j < MAXCreator; j++){
+        for(int i = 0; i < MAXPreserver; i++){
             
             if(LifeCreator[j] && LifePreserver[i]  && TheEnd == 0)
                 FxMatrix[j][i] = CAtom[j]->atomFxDist(PAtom[i]);
@@ -927,16 +963,16 @@ void ofApp::draw() {
     
     // TODO:Check for Freeze mode
     
-    for(int i = 0; i < n_Creator; i++){
+    for(int i = 0; i < MAXCreator; i++){
         
         if(LifeCreator[i])
             CAtom[i]->draw();
     }
-    for(int i = 0; i < n_Preserver; i++){
+    for(int i = 0; i < MAXPreserver; i++){
         if(LifePreserver[i])
             PAtom[i]->draw();
     }
-    for(int i = 0; i < n_Destroyer; i++){
+    for(int i = 0; i < MAXDestroyer; i++){
         if(LifeDestroyer[i])
             DAtom[i]->draw();
     }
@@ -954,16 +990,16 @@ void ofApp::draw() {
     }
     
     // Draw Frozen Atoms
-    for(int i = 0; i < n_Creator; i++){
+    for(int i = 0; i < MAXCreator; i++){
         
         if(LifeCreatorFreeze[i])
             CAtomFreeze[i]->draw();
     }
-    for(int i = 0; i < n_Preserver; i++){
+    for(int i = 0; i < MAXPreserver; i++){
         if(LifePreserverFreeze[i])
             PAtomFreeze[i]->draw();
     }
-    for(int i = 0; i < n_Destroyer; i++){
+    for(int i = 0; i < MAXDestroyer; i++){
         if(LifeDestroyerFreeze[i])
             DAtomFreeze[i]->draw();
     }
@@ -1019,7 +1055,7 @@ void ofApp::keyPressed(int key){
             
         case 'q':
         case 'Q':
-            for(int i = 0; i < n_Creator; i++){
+            for(int i = 0; i < MAXCreator; i++){
                 if(LifeCreator[i])
                     delete [] CAtom[i];
                 if(LifeCreatorFreeze[i])
@@ -1028,13 +1064,13 @@ void ofApp::keyPressed(int key){
             for(int i = 0; i < MAXCreator; i++){
                 delete [] dyingEnvironment[i];
             }
-            for(int i = 0; i < n_Preserver; i++){
+            for(int i = 0; i < MAXPreserver; i++){
                 if(LifePreserver[i])
                     delete [] PAtom[i];
                 if(LifePreserverFreeze[i])
                     delete [] PAtomFreeze[i];
             }
-            for(int i = 0; i < n_Destroyer; i++){
+            for(int i = 0; i < MAXDestroyer; i++){
                 if(LifeDestroyer[i])
                     delete [] DAtom[i];
                 if(LifeDestroyerFreeze[i])
@@ -1043,7 +1079,7 @@ void ofApp::keyPressed(int key){
             for(int i = 0; i < MAXAtoms; i++){
                 delete [] dyingEnd[i];
             }
-            for(int i = 0; i <3; i++){
+            for(int i = 0; i < 3; i++){
                 delete [] virtualAtom[i];
                 delete [] virtualAtomInvisible[i];
             }
@@ -1086,7 +1122,7 @@ void ofApp::Destroy(ofAtom* Atom){
     ofResetElapsedTimeCounter();
     
     // Free the memory assigned to Atom
-    delete [] Atom;
+    //delete [] Atom;
     
 }
 
