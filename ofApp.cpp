@@ -1,3 +1,12 @@
+/*
+*  This is part of the Samsara Project, by Manaswi, Siddharth and Kushagra - SMC, UPF 2016
+*  No part of this code may be used without contacting the authors
+*
+*  This is an experimental physics based virtual sound system project and we hope to develop it further and release it in the future
+*  29/01/2016
+*
+*    Contact : manaswimishra17@gmail.com
+*/
 
 #include "ofApp.h"
 #include <iostream>
@@ -103,7 +112,7 @@ void ofApp::setup() {
     C_receiver.setup(CPORT);
     P_receiver.setup(PPORT);
     D_receiver.setup(DPORT);
-    /*
+    
      // PD -----------------------------------------------------------------------------------------
      
      
@@ -114,6 +123,7 @@ void ofApp::setup() {
      PowerOn.setAddress("/power");
      M3.setAddress("/collisionPreserver");
      M4.setAddress("/collisionDestroyer");
+     M6.setAddress("/drum");
      
      // FxMatrix
      std::string msg;
@@ -145,18 +155,12 @@ void ofApp::setup() {
      M2[i].setAddress(msg);
      msg = "";
      }
-     */
+     
     // -------------------------------------------------------------------------------------
 }
 
 void ofApp::update() {
    
-    
-    //Creating Virtual Atoms at the detected centroids.
-    //virtualAtom[0]->assign(3,0,centroidmax1.x, centroidmax1.y,0,0, RADIUS/2);
-    //virtualAtom[1]->assign(3,1,centroidmax2.x, centroidmax2.y,0,0, RADIUS/2);
-    //virtualAtom[2]->assign(3,2,centroidmax3.x, centroidmax3.y,0,0, RADIUS/2);
-    
     
     // Blurring for graphics
     blur.setScale(0.2);
@@ -223,7 +227,8 @@ void ofApp::update() {
                 if(indexCreator < MAXCreator){
                     CAtom[indexCreator]->assign(0,indexCreator, C_OSCPosX, C_OSCPosY , RADIUS);
                     LifeCreator[indexCreator] = 1;
-                    n_Creator++;
+                    if(n_Creator < MAXCreator-1)
+		    n_Creator++;
                 }
             }
             else if(C_isInstance == 0 && C_flagInstance == 1)
@@ -360,6 +365,7 @@ void ofApp::update() {
                 if(indexPreserver < MAXPreserver){
                     PAtom[indexPreserver]->assign(1,indexPreserver, P_OSCPosX, P_OSCPosY , RADIUS);
                     LifePreserver[indexPreserver] = 1;
+                    if(n_Preserver < MAXPreserver-1)
                     n_Preserver++;
                 }
             }
@@ -874,10 +880,10 @@ void ofApp::update() {
      cout<<LifeDestroyer[i]<<" ";
      cout<<"D"<<endl;
      */
-    /*
-     
-     for(int j = 0; j < MAXCreator; j++){
-     for(int i = 0; i < MAXPreserver; i++){
+    
+     /*
+     for(int j = 0; j < n_Creator; j++){
+     for(int i = 0; i < n_Preserver; i++){
      cout<<FxMatrix[j][i]<<" ";
      }
      cout<< endl;
@@ -887,7 +893,7 @@ void ofApp::update() {
      */
     
     //OSC codes ----------------------------------------------------------------------------------
-    /*
+    
      // First Msg on first frame of code
      if(ofGetFrameNum() == 1){
      PowerOn.addIntArg(1);
@@ -895,8 +901,8 @@ void ofApp::update() {
      }
      
      // OSC for FxMatrix
-     for(int i = 0; i < MAXCreator; i++){
-     for(int j = 0; j < MAXPreserver; j++){
+     for(int i = 0; i < n_Creator; i++){
+     for(int j = 0; j < n_Preserver; j++){
      M5[i][j].addIntArg(FxMatrix[i][j]);
      sender.sendMessage(M5[i][j],false);
      M5[i][j].clear();
@@ -904,20 +910,44 @@ void ofApp::update() {
      }
      // OSC for LifeCreator
      for(int i = 0; i < MAXCreator; i++){
-     M1[i].addIntArg(LifeCreator[i]);
+     M1[i].addIntArg(LifeCreator[i] + LifeCreatorFreeze[i]);
      sender.sendMessage(M1[i],false);
      M1[i].clear();
      }
+
      // OSC for LifePreserver
      for(int i = 0; i < MAXPreserver; i++){
-     M2[i].addIntArg(LifePreserver[i]);
+     M2[i].addIntArg(LifePreserver[i] + LifePreserverFreeze[i]);
      sender.sendMessage(M2[i],false);
      M2[i].clear();
      }
      
+     //OSC for drum - number of Atoms in the System (normalized to 7)
+     int n_Atoms = 0;
+     for(int i = 0; i < MAXCreator; i++){
+     
+	if(LifeCreator[i] == 1 || LifeCreatorFreeze[i] == 1)
+		n_Atoms++;
+     }
+     for(int i = 0; i < MAXPreserver; i++){
+	
+	if(LifePreserver[i] == 1 || LifePreserverFreeze[i] == 1)
+		n_Atoms++;	
+     }
+     for(int i = 0; i < MAXDestroyer; i++){
+	
+	if(LifeDestroyer[i] == 1 || LifeDestroyerFreeze[i] == 1)
+		n_Atoms++;
+
+     }
+     n_Atoms = int((n_Atoms / float(MAXAtoms)) * 7.0);
+     M6.addIntArg(n_Atoms);
+     sender.sendMessage(M6,false);
+     M6.clear();
+
      // OSC for Collision Granular
-     for(int j = 0; j < n_Creator; j++){
-     for(int i = 0; i < n_Preserver; i++){
+     for(int j = 0; j < MAXCreator; j++){
+     for(int i = 0; i < MAXPreserver; i++){
      if(isCollidedPreserver[j][i] != 0){
      
      M3.addIntArg(1);	// Sending a 1 for collision with preserver
@@ -936,7 +966,7 @@ void ofApp::update() {
      }
      
      }
-     */
+     
 }
 
 void ofApp::draw() {

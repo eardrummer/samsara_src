@@ -1,3 +1,14 @@
+/*
+*  This is part of the Samsara Project, by Manaswi, Siddharth and Kushagra - SMC, UPF 2016
+*  No part of this code may be used(directly or modified) without contacting the authors
+*
+*  This is an experimental physics based virtual sound system project and we hope to develop it further and release it in the future
+*  29/01/2016
+*
+*    Contact : manaswimishra17@gmail.com
+*/
+
+
 #pragma once
 
 #include "ofMain.h"
@@ -9,8 +20,9 @@
 #include "ofAtom.h"
 #include "ofDyingAtom.h"
 
-#define HOST "192.168.43.143"
-#define PORT 9555
+//#define HOST "192.168.111.26"
+#define HOST "192.168.111.187"
+#define PORT 9600
 #define CPORT 9001
 #define PPORT 9002
 #define DPORT 9003
@@ -114,6 +126,7 @@ public:
     //osc Message Variables
     ofxOscMessage M1[MAXCreator],M2[MAXPreserver],M3,M4;
     ofxOscMessage M5[MAXCreator][MAXPreserver], PowerOn;
+    ofxOscMessage M6;
     
     ofxGIF::fiGifLoader gifloader;
     ofxGIF::fiGifLoader gifloader2;
