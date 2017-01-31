@@ -941,6 +941,7 @@ void ofApp::update() {
 
      }
      n_Atoms = int((n_Atoms / float(MAXAtoms)) * 7.0);
+     
      M6.addIntArg(n_Atoms);
      sender.sendMessage(M6,false);
      M6.clear();

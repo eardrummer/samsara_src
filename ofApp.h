@@ -1,11 +1,9 @@
 /*
 *  This is part of the Samsara Project, by Manaswi, Siddharth and Kushagra - SMC, UPF 2016
-*  No part of this code may be used(directly or modified) without contacting the authors
+*  No part of this code may be used without contacting the authors
 *
 *  This is an experimental physics based virtual sound system project and we hope to develop it further and release it in the future
 *  29/01/2016
-*
-*    Contact : manaswimishra17@gmail.com
 */
 
 
@@ -21,7 +19,7 @@
 #include "ofDyingAtom.h"
 
 //#define HOST "192.168.111.26"
-#define HOST "192.168.111.187"
+#define HOST "192.168.43.83"
 #define PORT 9600
 #define CPORT 9001
 #define PPORT 9002
